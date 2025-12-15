@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "filament/filament": "4.0",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1"
     },
@@ -78,7 +79,12 @@
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "composer/installers": true,
+            "filament/support": true
+        },
+        "audit": {
+            "ignore": ["PKSA-yb9k-ykqx-p2zw"]
         }
     },
     "minimum-stability": "stable",

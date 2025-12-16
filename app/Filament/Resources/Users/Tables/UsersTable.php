@@ -67,11 +67,19 @@ class UsersTable
           
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->visible(fn ($record) => $record->role !== 'Super Admin'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->before(function ($records) {
+                            // Prevent deletion of Super Admin users
+                            $superAdminCount = $records->where('role', 'Super Admin')->count();
+                            if ($superAdminCount > 0) {
+                                throw new \Exception('Cannot delete Super Admin users');
+                            }
+                        }),
                 ]),
             ]);
     }

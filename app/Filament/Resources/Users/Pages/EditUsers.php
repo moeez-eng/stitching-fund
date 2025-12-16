@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Users\Pages;
 
 use App\Filament\Resources\Users\UsersResource;
-use Filament\Actions\DeleteAction;
+use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditUsers extends EditRecord
@@ -13,7 +13,8 @@ class EditUsers extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->visible(fn ($record) => $record->role !== 'Super Admin'),
         ];
     }
 }

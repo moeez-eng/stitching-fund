@@ -8,6 +8,8 @@ use App\Filament\Resources\Lots\Pages\ListLots;
 use App\Filament\Resources\Lots\Schemas\LotsForm;
 use App\Filament\Resources\Lots\Tables\LotsTable;
 use App\Models\Lots;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -46,5 +48,19 @@ class LotsResource extends Resource
             'create' => CreateLots::route('/create'),
             'edit' => EditLots::route('/{record}/edit'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        $user = Auth::user();
+        if (!$user) return false;
+        
+        // Check if user has the required role
+        $allowedRoles = ['Super Admin', 'Agency Owner'];
+        $hasAccess = in_array($user->role, $allowedRoles);
+        
+        Log::info('Has access: ' . ($hasAccess ? 'true' : 'false'));
+        
+        return $hasAccess;
     }
 }

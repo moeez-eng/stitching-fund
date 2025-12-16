@@ -1,0 +1,78 @@
+<?php
+
+namespace App\Filament\Resources\Users\Tables;
+
+use Filament\Tables\Table;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Forms\Components\TextInput;
+
+class UsersTable
+{
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('name')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('email')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('role')
+                    ->searchable()
+                    ->sortable(),
+                ToggleColumn::make('is_active')
+                    ->label('Active')
+                    ->sortable(),
+
+            ])
+            ->filters([
+                Filter::make('name')
+                    ->form([
+                        TextInput::make('name')
+                            ->label('Name'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        $query->when($data['name'] ?? null, function ($query, $name) {
+                            $query->where('name', 'like', '%'.$name.'%');
+                        });
+                    }),
+                Filter::make('email')
+                    ->form([
+                        TextInput::make('email')
+                            ->label('Email'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        $query->when($data['email'] ?? null, function ($query, $email) {
+                            $query->where('email', 'like', '%'.$email.'%');
+                        });
+                    }),
+                SelectFilter::make('role')
+                    ->label('Role')
+                    ->options([
+                        'invester' => 'Investor',
+                        'agency owner' => 'Agency Owner',
+                        'user' => 'User',
+                    ]),
+            ])
+   
+              
+          
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+}

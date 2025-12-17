@@ -2,19 +2,21 @@
 
 namespace App\Filament\Resources\Lots;
 
-use App\Filament\Resources\Lots\Pages\CreateLots;
+use BackedEnum;
+use App\Models\Lots;
+use Filament\Tables\Table;
+use App\Models\LotMaterial;
+use Filament\Schemas\Schema;
+use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Log;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Auth;
 use App\Filament\Resources\Lots\Pages\EditLots;
 use App\Filament\Resources\Lots\Pages\ListLots;
+use App\Filament\Resources\Lots\Pages\CreateLots;
+use App\Filament\Resources\Lots\Pages\LotDetails;
 use App\Filament\Resources\Lots\Schemas\LotsForm;
 use App\Filament\Resources\Lots\Tables\LotsTable;
-use App\Models\Lots;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use BackedEnum;
-use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Table;
 
 class LotsResource extends Resource
 {
@@ -46,6 +48,7 @@ class LotsResource extends Resource
         return [
             'index' => ListLots::route('/'),
             'create' => CreateLots::route('/create'),
+            'view' => LotDetails::route('/{record}'),
             'edit' => EditLots::route('/{record}/edit'),
         ];
     }
@@ -63,4 +66,5 @@ class LotsResource extends Resource
         
         return $hasAccess;
     }
+   
 }

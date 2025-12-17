@@ -61,7 +61,7 @@ class LotsTable
                 ViewAction::make()
                     ->label('View')
                     ->icon('heroicon-o-eye')
-                    ->url('/lotview'),
+                    ->url(fn ($record) => route('filament.admin.resources.lots.view', $record)),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

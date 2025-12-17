@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\Lots\Pages;
 
-use App\Filament\Resources\Lots\LotsResource;
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use App\Filament\Resources\Lots\LotsResource;
 
 class ListLots extends ListRecords
 {
@@ -16,4 +17,15 @@ class ListLots extends ListRecords
             CreateAction::make(),
         ];
     }
+   
+
+protected function getTableActions(): array
+{
+    return [
+        Action::make('open')
+            ->label('Open')
+            ->url(fn ($record) => static::getResource()::getUrl('view', ['record' => $record]))
+    ];
+}
+
 }

@@ -25,8 +25,9 @@ class Lots extends Model
         return $this->belongsTo(Contact::class);
     }
 
-    public function materials()
-    {
-        return $this->hasMany(LotMaterial::class, 'lot_id');
-    }
+public function materials()
+{
+    return $this->hasMany(LotMaterial::class, 'lot_id');
+}
+
 }

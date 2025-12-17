@@ -5,13 +5,10 @@ namespace App\Filament\Resources\Lots\Pages;
 use Filament\Forms;
 use App\Models\Lots;
 use Filament\Resources\Pages\Page;
-use Filament\Schemas\Components\Form;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DateTimePicker;
+use Filament\Notifications\Notification;
 use App\Filament\Resources\Lots\LotsResource;
 
 class LotDetails extends Page implements Forms\Contracts\HasForms
@@ -19,78 +16,147 @@ class LotDetails extends Page implements Forms\Contracts\HasForms
     use Forms\Concerns\InteractsWithForms;
 
     protected static string $resource = LotsResource::class;
-
     protected string $view = 'filament.resources.lots.lots-resource.pages.lot-details';
 
     public Lots $record;
-
-    public ?string $editing = null; // null | material | stitching
-
-    public array $materialData = [];
-    public array $stitchingData = [];
+    public ?array $data = [];
 
     public function mount(Lots $record): void
     {
         $this->record = $record;
+        
+        // Load materials data
+        $this->form->fill([
+            'materials' => $record->materials->map(fn($m) => [
+                'material' => $m->material,
+                'colour' => $m->colour,
+                'unit' => $m->unit,
+                'rate' => $m->rate,
+                'quantity' => $m->quantity,
+                'price' => $m->price,
+            ])->toArray() ?: [[]],
+        ]);
     }
 
     protected function getFormSchema(): array
     {
         return [
             Repeater::make('materials')
-                ->relationship('materials')
+                ->label('Materials')
                 ->schema([
-                    DateTimePicker::make('dated')
-                        ->default(now())
-                        ->required(),
-
                     TextInput::make('material')
-                        ->required(),
-
-                    TextInput::make('colour'),
-
+                        ->label('Material')
+                        ->required()
+                        ->columnSpan(1),
+                    
+                    TextInput::make('colour')
+                        ->label('Colour')
+                        ->columnSpan(1),
+                    
                     Select::make('unit')
+                        ->label('Unit')
                         ->options([
                             'Yards' => 'Yards',
                             'Roll' => 'Roll',
                             'Packet' => 'Packet',
                             'Cone' => 'Cone',
                         ])
-                        ->required(),
-
+                        ->required()
+                        ->columnSpan(1),
+                    
                     TextInput::make('rate')
+                        ->label('Rate')
                         ->numeric()
+                        ->required()
                         ->reactive()
-                        ->required(),
-
+                        ->afterStateUpdated(fn ($state, callable $set, callable $get) => 
+                            $set('price', $state * ($get('quantity') ?? 0))
+                        )
+                        ->columnSpan(1),
+                    
                     TextInput::make('quantity')
+                        ->label('Quantity')
                         ->numeric()
+                        ->required()
                         ->reactive()
-                        ->required(),
-
+                        ->afterStateUpdated(fn ($state, callable $set, callable $get) => 
+                            $set('price', $state * ($get('rate') ?? 0))
+                        )
+                        ->columnSpan(1),
+                    
                     TextInput::make('price')
+                        ->label('Price')
                         ->numeric()
                         ->disabled()
-                        ->dehydrated(false)
-                        ->afterStateUpdated(fn ($set, $get) =>
-                            $set('price', ($get('rate') ?? 0) * ($get('quantity') ?? 0))
-                        ),
+                        ->dehydrated()
+                        ->columnSpan(1),
                 ])
-                ->columns(4)
+                ->columns(2)
                 ->defaultItems(1)
-                ->addActionLabel('Add Material'),
+                ->addActionLabel('Add Material')
+                ->collapsible()
+                ->itemLabel(fn (array $state): ?string => $state['material'] ?? null),
         ];
     }
 
-    
-    public function save(): void
+    protected function getFormStatePath(): ?string
     {
-        $this->form->validate();
-        $this->editing = null;
+        return 'data';
     }
 
-    public function closeForm(): void
+    public function save(): void
     {
-        $this->editing = null;
+        $data = $this->form->getState();
+
+        // Delete existing materials
+        $this->record->materials()->delete();
+
+        // Create new materials
+        if (!empty($data['materials'])) {
+            foreach ($data['materials'] as $material) {
+                if (empty($material['material'])) {
+                    continue;
+                }
+
+                $this->record->materials()->create([
+                    'material' => $material['material'],
+                    'colour' => $material['colour'] ?? null,
+                    'unit' => $material['unit'],
+                    'rate' => $material['rate'],
+                    'quantity' => $material['quantity'],
+                    'price' => $material['price'] ?? ($material['rate'] * $material['quantity']),
+                    'dated' => now(),
+                ]);
+            }
+        }
+
+        // Show success notification
+        Notification::make()
+            ->title('Saved successfully')
+            ->success()
+            ->send();
+
+        // Refresh the record and reload form
+        $this->record->refresh();
+        
+        $this->form->fill([
+            'materials' => $this->record->materials->map(fn($m) => [
+                'material' => $m->material,
+                'colour' => $m->colour,
+                'unit' => $m->unit,
+                'rate' => $m->rate,
+                'quantity' => $m->quantity,
+                'price' => $m->price,
+            ])->toArray() ?: [[]],
+        ]);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            \Filament\Actions\Action::make('save')
+                ->label('Save Materials')
+                ->action('save'),
+        ];
     }
 }

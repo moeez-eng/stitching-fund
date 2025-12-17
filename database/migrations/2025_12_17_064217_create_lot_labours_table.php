@@ -11,10 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('lot_labours', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+       Schema::create('lot_labours', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('lot_id')->constrained()->cascadeOnDelete();
+    $table->dateTime('dated');
+    $table->string('labour_type');
+    $table->string('unit');
+    $table->decimal('rate', 10, 2);
+    $table->integer('pieces');
+    $table->decimal('price', 10, 2);
+    $table->timestamps();
+});
+
     }
 
     /**

@@ -70,5 +70,5 @@ class LotsTable
                     DeleteBulkAction::make(),
                 ]),
             ]);
-    }
+    } 
 }

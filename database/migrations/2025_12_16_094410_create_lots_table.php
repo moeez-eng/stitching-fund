@@ -13,12 +13,10 @@ return new class extends Migration
     {
         Schema::create('lots', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->decimal('price', 10, 2)->nullable();
-            $table->string('status')->default('available');
-            $table->string('location')->nullable();
-            $table->integer('area')->nullable();
+            $table->string('lot_no');
+            $table->text('design_name')->nullable();
+            $table->decimal('coustmer_name')->nullable();
+
             $table->timestamps();
         });
     }

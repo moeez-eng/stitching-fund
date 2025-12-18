@@ -143,8 +143,19 @@ class LotDetails extends Page implements Forms\Contracts\HasForms, Tables\Contra
                     }),
             ])
             ->actions([
-                EditAction::make()
+                Action::make('edit')
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil')
                     ->form($this->getFormSchema())
+                    ->fillForm(function (array $data, $record) {
+                        $data['material'] = $record->material;
+                        $data['colour'] = $record->colour;
+                        $data['unit'] = $record->unit;
+                        $data['rate'] = $record->rate;
+                        $data['quantity'] = $record->quantity;
+                        $data['price'] = $record->price;
+                        return $data;
+                    })
                     ->action(function (array $data, $record) {
                         $record->update([
                             'material' => $data['material'],
@@ -159,6 +170,8 @@ class LotDetails extends Page implements Forms\Contracts\HasForms, Tables\Contra
                             ->title('Material updated successfully')
                             ->success()
                             ->send();
+                        
+                        $this->record->refresh();
                     }),
                 Action::make('delete')
                     ->label('Delete')
@@ -172,6 +185,8 @@ class LotDetails extends Page implements Forms\Contracts\HasForms, Tables\Contra
                             ->title('Material deleted successfully')
                             ->success()
                             ->send();
+                        
+                        $this->record->refresh();
                     }),
             ]);
     }

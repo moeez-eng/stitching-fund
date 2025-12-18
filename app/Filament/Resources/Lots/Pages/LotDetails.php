@@ -4,99 +4,163 @@ namespace App\Filament\Resources\Lots\Pages;
 
 use Filament\Forms;
 use App\Models\Lots;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\Page;
+use Illuminate\Support\Facades\Log;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Repeater;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use App\Filament\Resources\Lots\LotsResource;
 
-class LotDetails extends Page implements Forms\Contracts\HasForms
+class LotDetails extends Page implements Forms\Contracts\HasForms, Tables\Contracts\HasTable
 {
     use Forms\Concerns\InteractsWithForms;
+    use Tables\Concerns\InteractsWithTable;
 
     protected static string $resource = LotsResource::class;
     protected string $view = 'filament.resources.lots.lots-resource.pages.lot-details';
 
     public Lots $record;
     public ?array $data = [];
+    public bool $isOpen = false;
+    public ?int $editingId = null;
 
     public function mount(Lots $record): void
     {
-        $this->record = $record;
-        
-        // Load materials data
-        $this->form->fill([
-            'materials' => $record->materials->map(fn($m) => [
-                'material' => $m->material,
-                'colour' => $m->colour,
-                'unit' => $m->unit,
-                'rate' => $m->rate,
-                'quantity' => $m->quantity,
-                'price' => $m->price,
-            ])->toArray() ?: [[]],
-        ]);
+        $this->record = $record->load('materials');
     }
 
     protected function getFormSchema(): array
     {
         return [
-            Repeater::make('materials')
-                ->label('Materials')
-                ->schema([
-                    TextInput::make('material')
-                        ->label('Material')
-                        ->required()
-                        ->columnSpan(1),
-                    
-                    TextInput::make('colour')
-                        ->label('Colour')
-                        ->columnSpan(1),
-                    
-                    Select::make('unit')
-                        ->label('Unit')
-                        ->options([
-                            'Yards' => 'Yards',
-                            'Roll' => 'Roll',
-                            'Packet' => 'Packet',
-                            'Cone' => 'Cone',
-                        ])
-                        ->required()
-                        ->columnSpan(1),
-                    
-                    TextInput::make('rate')
-                        ->label('Rate')
-                        ->numeric()
-                        ->required()
-                        ->reactive()
-                        ->afterStateUpdated(fn ($state, callable $set, callable $get) => 
-                            $set('price', $state * ($get('quantity') ?? 0))
-                        )
-                        ->columnSpan(1),
-                    
-                    TextInput::make('quantity')
-                        ->label('Quantity')
-                        ->numeric()
-                        ->required()
-                        ->reactive()
-                        ->afterStateUpdated(fn ($state, callable $set, callable $get) => 
-                            $set('price', $state * ($get('rate') ?? 0))
-                        )
-                        ->columnSpan(1),
-                    
-                    TextInput::make('price')
-                        ->label('Price')
-                        ->numeric()
-                        ->disabled()
-                        ->dehydrated()
-                        ->columnSpan(1),
+            TextInput::make('material')
+                ->label('Material')
+                ->required(),
+            
+            TextInput::make('colour')
+                ->label('Colour'),
+            
+            Select::make('unit')
+                ->label('Unit')
+                ->options([
+                    'Yards' => 'Yards',
+                    'Roll' => 'Roll',
+                    'Packet' => 'Packet',
+                    'Cone' => 'Cone',
                 ])
-                ->columns(2)
-                ->defaultItems(1)
-                ->addActionLabel('Add Material')
-                ->collapsible()
-                ->itemLabel(fn (array $state): ?string => $state['material'] ?? null),
+                ->required(),
+            
+            TextInput::make('rate')
+                ->label('Rate')
+                ->numeric()
+                ->required()
+                ->live()
+                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                    $quantity = $get('quantity') ?? 0;
+                    $set('price', $state * $quantity);
+                }),
+            
+            TextInput::make('quantity')
+                ->label('Quantity')
+                ->numeric()
+                ->required()
+                ->live()
+                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                    $rate = $get('rate') ?? 0;
+                    $set('price', $state * $rate);
+                }),
+            
+            TextInput::make('price')
+                ->label('Price')
+                ->numeric()
+                ->disabled()
+                ->dehydrated(),
         ];
+    }
+
+    public function table(Table $table): Table
+    {
+        return $table
+            ->query($this->record->materials()->getQuery())
+            ->columns([
+                TextColumn::make('material')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('colour')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('unit')
+                    ->sortable(),
+                TextColumn::make('rate')
+                    ->numeric()
+                    ->money('PKR')
+                    ->sortable(),
+                TextColumn::make('quantity')
+                    ->numeric()
+                    ->sortable(),
+                TextColumn::make('price')
+                    ->money('PKR')
+                    ->sortable(),
+            ])
+            ->headerActions([
+                Action::make('add_material')
+                    ->label('Add Material')
+                    ->icon('heroicon-o-plus')
+                    ->form($this->getFormSchema())
+                    ->action(function (array $data) {
+                        $this->record->materials()->create([
+                            'material' => $data['material'],
+                            'colour' => $data['colour'] ?? null,
+                            'unit' => $data['unit'],
+                            'rate' => $data['rate'],
+                            'quantity' => $data['quantity'],
+                            'price' => $data['price'] ?? ($data['rate'] * $data['quantity']),
+                            'dated' => now(),
+                        ]);
+                        
+                        Notification::make()
+                            ->title('Material added successfully')
+                            ->success()
+                            ->send();
+                    }),
+            ])
+            ->actions([
+                EditAction::make()
+                    ->form($this->getFormSchema())
+                    ->action(function (array $data, $record) {
+                        $record->update([
+                            'material' => $data['material'],
+                            'colour' => $data['colour'] ?? null,
+                            'unit' => $data['unit'],
+                            'rate' => $data['rate'],
+                            'quantity' => $data['quantity'],
+                            'price' => $data['price'] ?? ($data['rate'] * $data['quantity']),
+                        ]);
+                        
+                        Notification::make()
+                            ->title('Material updated successfully')
+                            ->success()
+                            ->send();
+                    }),
+                Action::make('delete')
+                    ->label('Delete')
+                    ->color('danger')
+                    ->icon('heroicon-o-trash')
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
+                        $record->delete();
+                        
+                        Notification::make()
+                            ->title('Material deleted successfully')
+                            ->success()
+                            ->send();
+                    }),
+            ]);
     }
 
     protected function getFormStatePath(): ?string
@@ -104,59 +168,113 @@ class LotDetails extends Page implements Forms\Contracts\HasForms
         return 'data';
     }
 
-    public function save(): void
+    // This is the method that's being called
+    public function openModal()
+    {
+        Notification::make()
+            ->title('Debug: openModal called')
+            ->success()
+            ->send();
+            
+        $this->editingId = null;
+        $this->form->fill([
+            'material' => '',
+            'colour' => '',
+            'unit' => '',
+            'rate' => '',
+            'quantity' => '',
+            'price' => '',
+        ]);
+        $this->isOpen = true;
+        
+        Notification::make()
+            ->title('Debug: isOpen set to ' . $this->isOpen)
+            ->success()
+            ->send();
+    }
+
+    public function editMaterial($id)
+    {
+        $material = $this->record->materials()->find($id);
+        
+        if ($material) {
+            $this->editingId = $material->id;
+            $this->form->fill([
+                'material' => $material->material,
+                'colour' => $material->colour,
+                'unit' => $material->unit,
+                'rate' => $material->rate,
+                'quantity' => $material->quantity,
+                'price' => $material->price,
+            ]);
+            $this->isOpen = true;
+        }
+    }
+
+    public function saveMaterial()
     {
         $data = $this->form->getState();
-
-        // Delete existing materials
-        $this->record->materials()->delete();
-
-        // Create new materials
-        if (!empty($data['materials'])) {
-            foreach ($data['materials'] as $material) {
-                if (empty($material['material'])) {
-                    continue;
-                }
-
-                $this->record->materials()->create([
-                    'material' => $material['material'],
-                    'colour' => $material['colour'] ?? null,
-                    'unit' => $material['unit'],
-                    'rate' => $material['rate'],
-                    'quantity' => $material['quantity'],
-                    'price' => $material['price'] ?? ($material['rate'] * $material['quantity']),
-                    'dated' => now(),
-                ]);
-            }
+        
+        if ($this->editingId) {
+            $this->record->materials()->where('id', $this->editingId)->update([
+                'material' => $data['material'],
+                'colour' => $data['colour'] ?? null,
+                'unit' => $data['unit'],
+                'rate' => $data['rate'],
+                'quantity' => $data['quantity'],
+                'price' => $data['price'] ?? ($data['rate'] * $data['quantity']),
+            ]);
+            
+            $message = 'Material updated successfully';
+        } else {
+            $this->record->materials()->create([
+                'material' => $data['material'],
+                'colour' => $data['colour'] ?? null,
+                'unit' => $data['unit'],
+                'rate' => $data['rate'],
+                'quantity' => $data['quantity'],
+                'price' => $data['price'] ?? ($data['rate'] * $data['quantity']),
+                'dated' => now(),
+            ]);
+            
+            $message = 'Material added successfully';
         }
 
-        // Show success notification
         Notification::make()
-            ->title('Saved successfully')
+            ->title($message)
             ->success()
             ->send();
 
-        // Refresh the record and reload form
+        $this->closeModal();
         $this->record->refresh();
+    }
+    
+    public function deleteMaterial($id)
+    {
+        $this->record->materials()->where('id', $id)->delete();
         
-        $this->form->fill([
-            'materials' => $this->record->materials->map(fn($m) => [
-                'material' => $m->material,
-                'colour' => $m->colour,
-                'unit' => $m->unit,
-                'rate' => $m->rate,
-                'quantity' => $m->quantity,
-                'price' => $m->price,
-            ])->toArray() ?: [[]],
-        ]);
+        Notification::make()
+            ->title('Material deleted successfully')
+            ->success()
+            ->send();
+            
+        $this->record->refresh();
+    }
+
+    public function closeModal()
+    {
+        $this->isOpen = false;
+        $this->form->fill([]);
+        $this->editingId = null;
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\Action::make('save')
-                ->label('Save Materials')
-                ->action('save'),
+            Action::make('back')
+                ->label('Back to Lots')
+                ->url(route('filament.admin.resources.lots.index'))
+                ->color('gray'),
         ];
     }
 }

@@ -30,6 +30,11 @@ class LotDetails extends Page implements Forms\Contracts\HasForms, Tables\Contra
     public bool $isOpen = false;
     public ?int $editingId = null;
 
+    public function getTotalPrice(): float
+    {
+        return $this->record->materials()->sum('price');
+    }
+
     public function mount(Lots $record): void
     {
         $this->record = $record->load('materials');
@@ -106,6 +111,12 @@ class LotDetails extends Page implements Forms\Contracts\HasForms, Tables\Contra
                 TextColumn::make('price')
                     ->money('PKR')
                     ->sortable(),
+                TextColumn::make('total_header')
+                    ->label('Total: PKR ' . number_format($this->getTotalPrice(), 2))
+                    ->alignCenter()
+                    ->formatStateUsing(function () {
+                        return '';
+                    }),
             ])
             ->headerActions([
                 Action::make('add_material')
@@ -127,6 +138,8 @@ class LotDetails extends Page implements Forms\Contracts\HasForms, Tables\Contra
                             ->title('Material added successfully')
                             ->success()
                             ->send();
+                        
+                        $this->record->refresh();
                     }),
             ])
             ->actions([

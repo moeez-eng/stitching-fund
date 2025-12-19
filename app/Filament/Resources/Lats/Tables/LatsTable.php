@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Lats\Tables;
 
+use App\Models\Lat;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -17,6 +18,7 @@ class LatsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->query(Lat::with(['materials', 'expenses']))
             ->columns([
                TextColumn::make('lat_no')
                ->label('Lat No')
@@ -27,6 +29,20 @@ class LatsTable
                TextColumn::make('customer_name')
                ->label('Customer')
                ->searchable(),
+                TextColumn::make('total_price')
+                    ->label('Total Price')
+                    ->numeric()
+                    ->prefix('PKR ')
+                    ->sortable()
+                    ->state(function (Lat $record) {
+                        // Calculate material total using the price column
+                        $materialTotal = $record->materials->sum('price');
+                        // Calculate expense total
+                        $expenseTotal = $record->expenses->sum('price');
+                        
+                        return $materialTotal + $expenseTotal;
+                    })
+                    ->formatStateUsing(fn ($state) => number_format($state, 0, '.', ','))
             ])
             ->filters([
                 SelectFilter::make('design')
@@ -35,7 +51,7 @@ class LatsTable
                     ->searchable(),
                 SelectFilter::make('customer')
                     ->label('Customer')
-                    ->relationship('customer', 'name',)
+                    ->relationship('customer', 'name')
                     ->searchable(),
                 Filter::make('lat_no')
                     ->form([
@@ -50,11 +66,11 @@ class LatsTable
                         );
                     })
             ])
-            ->recordActions([
+            ->actions([
                 EditAction::make(),
                 DeleteAction::make(),
             ])
-            ->toolbarActions([
+            ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

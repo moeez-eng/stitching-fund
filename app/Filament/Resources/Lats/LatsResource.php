@@ -25,10 +25,10 @@ class LatsResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $navigationLabel = 'Materials';
-    protected static ?string $modelLabel = 'Material';
-    protected static ?string $pluralModelLabel = 'Materials';
-    protected static ?string $recordTitleAttribute = 'material';
+    protected static ?string $navigationLabel = 'Lats';
+    protected static ?string $modelLabel = 'Lat';
+    protected static ?string $pluralModelLabel = 'Lats';
+    protected static ?string $recordTitleAttribute = 'lat_no';
 
     public static function form(Schema $schema): Schema
     {

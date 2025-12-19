@@ -21,7 +21,25 @@ class Expense extends Model
 
     protected $casts = [
         'dated' => 'date',
+        'rate' => 'float',
+        'pieces' => 'integer',
+        'price' => 'float',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($expense) {
+            $expense->calculatePrice();
+        });
+    }
+
+    public function calculatePrice()
+    {
+        $this->price = $this->rate * $this->pieces;
+        return $this;
+    }
 
     public function lat()
     {

@@ -6,23 +6,28 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+    public function up()
     {
-        Schema::table('lot_materials', function (Blueprint $table) {
-            //
+        Schema::table('lat_materials', function (Blueprint $table) {
+            // First, drop the existing foreign key constraint
+            $table->dropForeign(['lat_id']);
+            
+            // Then, add the correct foreign key constraint
+            $table->foreign('lat_id')
+                  ->references('id')
+                  ->on('lats')
+                  ->cascadeOnDelete();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::table('lot_materials', function (Blueprint $table) {
-            //
+            $table->dropForeign(['lot_id']);
+            $table->foreign('lot_id')
+                  ->references('id')
+                  ->on('lots')
+                  ->cascadeOnDelete();
         });
     }
 };

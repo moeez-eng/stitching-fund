@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LatMaterial extends Model
 {
-    protected $table = 'lot_materials';
+    protected $table = 'lat_materials';
     
     protected $fillable = [
         'lat_id',

@@ -2,75 +2,102 @@
 
 namespace App\Filament\Resources\Lats\RelationManagers;
 
-use Filament\Forms\Form;
-use Filament\Tables\Table;
+use Filament\Forms;
 use Filament\Schemas\Schema;
-use Filament\Actions\EditAction;
+use Filament\Actions\AttachAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DetachAction;
+use Filament\Actions\DetachBulkAction;
 use Filament\Actions\CreateAction;
-use Filament\Actions\DeleteAction;
-use Filament\Forms\Components\Select;
+use Filament\Actions\EditAction;
+use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\TextInput;
-use App\Filament\Resources\Lats\LatsResource;
 use Filament\Resources\RelationManagers\RelationManager;
 
 class MaterialsRelationManager extends RelationManager
 {
     protected static string $relationship = 'materials';
 
-    protected static ?string $relatedResource = LatsResource::class;
-
+    protected static ?string $recordTitleAttribute = 'material';
+    
     public function form(Schema $schema): Schema
     {
         return $schema
-            ->schema([
-                TextInput::make('material')
+            ->components([
+                Forms\Components\TextInput::make('material')->required(),
+                Forms\Components\TextInput::make('colour')->required(),
+                Forms\Components\TextInput::make('unit')->required(),
+                Forms\Components\TextInput::make('rate')
                     ->required()
-                    ->maxLength(255),
-
-                TextInput::make('colour')
-                    ->maxLength(255),
-
-                Select::make('unit')
-                    ->options([
-                        'Yards' => 'Yards',
-                        'Roll' => 'Roll',
-                        'Packet' => 'Packet',
-                        'Cone' => 'Cone',
-                    ])
-                    ->required(),
-
-                TextInput::make('rate')
                     ->numeric()
-                    ->required(),
-
-                TextInput::make('quantity')
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(function ($state, callable $set, $get) {
+                        $quantity = $get('quantity');
+                        if ($quantity) {
+                            $set('price', $state * $quantity);
+                        }
+                    }),
+                Forms\Components\TextInput::make('quantity')
+                    ->required()
                     ->numeric()
-                    ->required(),
-                    
-                TextInput::make('price')
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(function ($state, callable $set, $get) {
+                        $rate = $get('rate');
+                        if ($rate) {
+                            $set('price', $state * $rate);
+                        }
+                    }),
+                Forms\Components\TextInput::make('price')
+                    ->required()
                     ->numeric()
                     ->disabled()
                     ->dehydrated()
             ]);
-    } 
+    }
+
     public function table(Table $table): Table
     {
         return $table
             ->columns([
-                TextColumn::make('material')->searchable(),
-                TextColumn::make('colour'),
+                TextColumn::make('material')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('colour')
+                    ->searchable(),
                 TextColumn::make('unit'),
-                TextColumn::make('rate')->money('PKR'),
-                TextColumn::make('quantity'),
-                TextColumn::make('price')->money('PKR'),
+                TextColumn::make('rate')
+                    ->money('PKR')
+                    ->sortable(),
+                TextColumn::make('quantity')
+                    ->numeric()
+                    ->sortable(),
+                TextColumn::make('price')
+                    ->money('PKR')
+                    ->sortable(),
             ])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()
+                    ->label('Add Material')
+                    ->icon('heroicon-o-plus')
+                    ->mutateFormDataUsing(function (array $data): array {
+                        $data['price'] = $data['rate'] * $data['quantity'];
+                        return $data;
+                    }),
+                AttachAction::make(),
             ])
             ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->mutateFormDataUsing(function (array $data): array {
+                        $data['price'] = $data['rate'] * $data['quantity'];
+                        return $data;
+                    }),
+                DetachAction::make(),
+            ])
+            ->bulkActions([
+                BulkActionGroup::make([
+                    DetachBulkAction::make(),
+                ]),
             ]);
-    }
 }
+}
+

@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class LotMaterial extends Model
+class LatMaterial extends Model
 {
+    protected $table = 'lot_materials';
+    
     protected $fillable = [
-        'lot_id',
+        'lat_id',
         'dated',
         'material',
         'colour',
@@ -22,8 +24,8 @@ class LotMaterial extends Model
         'dated' => 'datetime',
     ];
 
-    public function lot()
+    public function lat()
     {
-        return $this->belongsTo(Lots::class, 'lot_id');
+        return $this->belongsTo(Lat::class, 'lat_id');
     }
 }

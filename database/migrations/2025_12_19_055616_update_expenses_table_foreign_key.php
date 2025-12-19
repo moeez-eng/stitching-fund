@@ -11,10 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('contacts', function (Blueprint $table) {
-            $table->string('contact');
-            $table->string('phone');
-            $table->string('Ctype');
+        Schema::table('expenses', function (Blueprint $table) {
+            $table->renameColumn('lot_no', 'lat_id');
+            $table->foreign('lat_id')->references('id')->on('lats')->cascadeOnDelete();
         });
     }
 
@@ -23,10 +22,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('contacts', function (Blueprint $table) {
-            $table->dropColumn('contact');
-            $table->dropColumn('phone');
-            $table->dropColumn('Ctype');
+        Schema::table('expenses', function (Blueprint $table) {
+            $table->dropForeign(['lat_id']);
+            $table->renameColumn('lat_id', 'lot_no');
         });
     }
 };

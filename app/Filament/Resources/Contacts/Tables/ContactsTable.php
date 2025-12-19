@@ -21,7 +21,7 @@ class ContactsTable
                TextColumn::make('phone')
                ->label('Phone')
                ->searchable(),
-               TextColumn::make('Ctype')
+               TextColumn::make('ctype')
                ->label('Type')
                ->searchable(),
             ])

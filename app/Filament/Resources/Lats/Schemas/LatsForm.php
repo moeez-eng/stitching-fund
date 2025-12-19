@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\Lots\Schemas;
+namespace App\Filament\Resources\Lats\Schemas;
 
-use App\Models\Lots;
+use App\Models\Lat;
 use App\Models\Design;
 use App\Models\Customer;
 use Illuminate\Support\Facades\DB;
@@ -12,35 +12,30 @@ use Illuminate\Support\Facades\Cache;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form as FilamentForm;
 
-class LotsForm
+class LatsForm
 {
     public static function configure(Schema $schema): Schema
     {
         return $schema->schema(self::getFormSchema());
     }
 
-    public static function getFormSchema(bool $isView = false): array
+    public static function getFormSchema(): array
     {
         return [
-            TextInput::make('lot_no')
-                ->label('Lot Number')
+            TextInput::make('lat_no')
+                ->label('Lat Number')
                 ->required()
                 ->numeric()
                 ->unique(ignoreRecord: true)
-                ->default(fn () => Lots::max('lot_no') + 1)
-                ->disabled(fn ($record) => $record !== null || $isView),
-
-            $isView 
-            ? TextInput::make('design.name')
+                ->default(fn () => Lat::max('lat_no') + 1),
+            
+            Select::make('design_name')
                 ->label('Design')
-                ->disabled()
-                ->dehydrated(false)
-            : Select::make('design_id')
-                ->label('Design')
-                ->relationship('design', 'name')
+                ->options(function () {
+                    return \App\Models\Design::pluck('name', 'name')->toArray();
+                })
                 ->searchable()
                 ->preload()
-                ->distinct()
                 ->createOptionForm([
                     TextInput::make('name')
                         ->label('New Design Name')
@@ -48,66 +43,36 @@ class LotsForm
                         ->maxLength(255)
                         ->unique(),
                 ])
-                 ->default(function ($livewire) {
-                    $lastLot = \App\Models\Lots::latest('id')->first();
-                    return $lastLot ? $lastLot->design_id : null;
+                ->createOptionUsing(function (array $data) {
+                    $design = \App\Models\Design::create(['name' => $data['name']]);
+                    return $design->name;
                 })
                 ->required(),
-        $isView 
-            ? TextInput::make('customer.name')
-                ->label('Customer')
-                ->disabled()
-                ->dehydrated(false)
-            : Select::make('customer_id')
+                
+            Select::make('customer_name')
                 ->label('Customer')
                 ->options(function () {
-                    return \App\Models\Contact::where('Ctype', 'Customer')
+                    return \App\Models\Contact::where('ctype', 'customer')
                         ->get()
                         ->mapWithKeys(function ($contact) {
-                            return [$contact->id => "{$contact->name} - {$contact->phone}"];
+                            return [$contact->name => "{$contact->name} - {$contact->phone}"];
                         })
                         ->toArray();
                 })
                 ->searchable()
                 ->preload()
-                 ->default(function ($livewire) {
-                    $lastLot = \App\Models\Lots::latest('id')->first();
-                    return $lastLot ? $lastLot->customer_id : null;
-                })
                 ->required(),
         ];
     }
     
-    public static function getViewSchema(): array
-    {
-        return [
-            TextInput::make('lot_no')
-                ->label('Lot Number')
-                ->disabled(),
-            TextInput::make('design.name')
-                ->label('Design')
-                ->disabled()
-                ->dehydrated(false)
-                ->required()
-                ->unique()
-                ->formatStateUsing(fn ($record) => $record?->design?->name ?? 'N/A'),
-            TextInput::make('customer.name')
-                ->label('Customer')
-                ->disabled()
-                ->dehydrated(false)
-                ->required()
-                ->unique()
-                ->formatStateUsing(fn ($record) => $record?->customer?->name ?? 'N/A'),
-        ];
-    }
-
+   
     // ======================================================================
     // CACHED OPTIONS (v4: Optimized with pattern clearing)
     // ======================================================================
 
     public static function getDesignOptions(?string $search = null): array
     {
-        $key = 'lots_design_options' . ($search ? '_s_' . md5($search) : '');
+        $key = 'lats_design_options' . ($search ? '_s_' . md5($search) : '');
         return Cache::remember($key, now()->addHours(6), function () use ($search) {
             $q = \App\Models\Design::query()->select('id', 'name')->orderBy('name');
             if ($search) {
@@ -120,14 +85,14 @@ class LotsForm
     public static function clearDesignCache(): void
     {
         // Clear the main cache
-        Cache::forget('lots_design_options');
+        Cache::forget('lats_design_options');
         
         // Clear search caches in a driver-agnostic way
         $prefix = config('cache.prefix');
         $keys = [
-            $prefix . '_lots_design_options_s_*',
-            $prefix . ':lots_design_options_s_*',
-            'lots_design_options_s_*'
+            $prefix . '_lats_design_options_s_*',
+            $prefix . ':lats_design_options_s_*',
+            'lats_design_options_s_*'
         ];
         
         // Try to clear using tags if supported
@@ -172,7 +137,7 @@ class LotsForm
             $cacheTable = config('cache.stores.database.table', 'cache');
             
             DB::table($cacheTable)
-                ->where('key', 'like', $prefix . ':%lots_customer_options_s_%')
+                ->where('key', 'like', $prefix . ':%lats_customer_options_s_%')
                 ->delete();
                 
             // Also try without the prefix in case it's not included in the stored key
@@ -184,12 +149,12 @@ class LotsForm
         else {
             // Generate a list of possible cache keys that might have been used
             $keys = [
-                'lots_customer_options',
-                'lots_customer_options_s_*',
-                $prefix . '_lots_customer_options',
-                $prefix . '_lots_customer_options_s_*',
-                $prefix . ':lots_customer_options',
-                $prefix . ':lots_customer_options_s_*'
+                'lats_customer_options',
+                'lats_customer_options_s_*',
+                $prefix . '_lats_customer_options',
+                $prefix . '_lats_customer_options_s_*',
+                $prefix . ':lats_customer_options',
+                $prefix . ':lats_customer_options_s_*'
             ];
             
             // Try to clear using tags if supported

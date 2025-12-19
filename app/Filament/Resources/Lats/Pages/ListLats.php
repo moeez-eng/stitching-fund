@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Filament\Resources\Lots\Pages;
+namespace App\Filament\Resources\Lats\Pages;
 
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
-use App\Filament\Resources\Lots\LotsResource;
+use App\Filament\Resources\Lats\LatsResource;
 
-class ListLots extends ListRecords
+class ListLats extends ListRecords
 {
-    protected static string $resource = LotsResource::class;
+    protected static string $resource = LatsResource::class;
 
     protected function getHeaderActions(): array
     {

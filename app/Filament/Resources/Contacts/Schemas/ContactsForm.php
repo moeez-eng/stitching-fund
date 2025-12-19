@@ -21,11 +21,11 @@ class ContactsForm
                ->required()
                ->maxLength(255)
                ->unique(),
-               Select::make('Ctype')
+               Select::make('ctype')
                 ->options([
-                    'Customer' => 'Customer',
-                    'Investor' => 'Investor',
-                    'Employee' => 'Employee',
+                    'customer' => 'Customer',
+                    'investor' => 'Investor',
+                    'employee' => 'Employee',
                 ])
                 ->required(),
                

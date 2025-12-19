@@ -10,8 +10,8 @@ class Design extends Model
     use HasFactory;
     
     protected $guarded = [];
-    public function lots()
+    public function lats()
     {
-        return $this->hasMany(Lots::class, 'design_id');
+        return $this->hasMany(Lat::class, 'design_id');
     }
 }

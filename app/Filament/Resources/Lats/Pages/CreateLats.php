@@ -8,4 +8,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateLats extends CreateRecord
 {
     protected static string $resource = LatsResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

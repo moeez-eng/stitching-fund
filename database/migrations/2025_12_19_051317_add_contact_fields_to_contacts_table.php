@@ -10,21 +10,21 @@ return new class extends Migration
      * Run the migrations.
      */
    public function up()
-{
-    Schema::table('contacts', function (Blueprint $table) {
-        $table->string('name')->nullable()->after('id');
-        $table->string('phone')->nullable()->after('name');
-        $table->enum('ctype', ['customer', 'investor', 'employee'])->after('phone');
-    });
-}
+    {
+       Schema::create('contacts', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->nullable();
+            $table->string('phone')->nullable();
+            $table->enum('ctype', ['customer', 'investor', 'employee']);
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::table('contacts', function (Blueprint $table) {
-            $table->dropColumn(['name', 'phone', 'ctype']);
-        });
+        Schema::dropIfExists('contacts');
     }
 };

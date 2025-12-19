@@ -3,15 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LatMaterial extends Model
 {
-    protected $table = 'lat_materials';
-    
     protected $fillable = [
         'lat_id',
-        'dated',
         'material',
         'colour',
         'unit',
@@ -21,11 +17,13 @@ class LatMaterial extends Model
     ];
 
     protected $casts = [
-        'dated' => 'datetime',
+        'rate' => 'decimal:2',
+        'quantity' => 'decimal:2',
+        'price' => 'decimal:2',
     ];
 
-    public function lat()
+    public function lot()
     {
-        return $this->belongsTo(Lat::class, 'lat_id');
+        return $this->belongsTo(Lots::class, 'lat_id');
     }
 }

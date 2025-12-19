@@ -3,22 +3,30 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Invitation extends Model
+class Expense extends Model
 {
     protected $fillable = [
-        'email',
-        'role',
-        'invited_by',
-        'expires_at',
+        'lot_no',
+        'labour_type',
+        'unit',
+        'rate',
+        'pieces',
+        'price',
+        'dated',
     ];
 
     protected $casts = [
-        'expires_at' => 'datetime',
+        'dated' => 'date',
+        'unit' => 'decimal:2',
+        'rate' => 'decimal:2',
+        'pieces' => 'decimal:2',
+        'price' => 'decimal:2',
     ];
 
-    public function inviter()
+    public function lot(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'invited_by');
+        return $this->belongsTo(Lots::class, 'lot_no');
     }
 }

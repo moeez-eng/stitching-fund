@@ -5,14 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Lat extends Model
+class Lots extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'lat_no',
-        'design_name',
-        'customer_name',
+        'lot_no',
+        'design_id',
+        'customer_id',
     ];
 
     public function design()
@@ -24,15 +24,10 @@ class Lat extends Model
     {
         return $this->belongsTo(Contact::class);
     }
-    public function materials()
-    {
-        return $this->hasMany(LatMaterial::class, 'lat_id');
-    }
 
-    public function expenses()
-    {
-        return $this->hasMany(Expense::class, 'lat_id');
-    }
-
+public function expenses()
+{
+    return $this->hasMany(Expense::class, 'lat_id');
+}
 
 }

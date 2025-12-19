@@ -14,7 +14,7 @@ public function up()
 {
     Schema::create('expenses', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('lot_no');
+        $table->foreignId('lot_no')->constrained('lots', 'lot_no')->onDelete('cascade');
         $table->string('labour_type');
         $table->decimal('unit', 10, 2);
         $table->decimal('rate', 10, 2);

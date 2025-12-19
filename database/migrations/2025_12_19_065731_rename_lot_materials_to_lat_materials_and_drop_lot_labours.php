@@ -27,14 +27,6 @@ return new class extends Migration
         Schema::rename('lat_materials', 'lot_materials');
         
         // Reverse: recreate lot_labours table (basic structure)
-        Schema::create('lot_labours', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('lot_id')->constrained()->cascadeOnDelete();
-            $table->string('labour');
-            $table->decimal('rate', 10, 2);
-            $table->decimal('quantity', 10, 2);
-            $table->decimal('price', 10, 2);
-            $table->timestamps();
-        });
+      
     }
 };

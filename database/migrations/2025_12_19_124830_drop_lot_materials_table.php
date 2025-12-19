@@ -11,9 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('lats', function (Blueprint $table) {
-            $table->renameColumn('lot_no', 'lat_no');
-        });
+        //
     }
 
     /**
@@ -21,8 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('lats', function (Blueprint $table) {
-            $table->renameColumn('lat_no', 'lot_no');
-        });
+        //
     }
 };

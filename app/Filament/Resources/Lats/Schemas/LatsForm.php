@@ -26,6 +26,8 @@ class LatsForm
                 ->label('Lat Number')
                 ->required()
                 ->numeric()
+                ->disabled()
+                ->dehydrated()
                 ->unique(ignoreRecord: true)
                 ->default(fn () => Lat::max('lat_no') + 1),
             

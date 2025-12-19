@@ -11,14 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('lots', function (Blueprint $table) {
-            $table->id();
-            $table->string('lot_no');
-            $table->text('design_name')->nullable();
-            $table->decimal('coustmer_name')->nullable();
-
-            $table->timestamps();
-        });
+        //
     }
 
     /**
@@ -26,6 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('lots');
+        //
     }
 };

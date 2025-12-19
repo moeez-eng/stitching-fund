@@ -14,12 +14,13 @@ class LatMaterial extends Model
         'rate',
         'quantity',
         'price',
+        'dated',
     ];
 
     protected $casts = [
-        'rate' => 'decimal:2',
-        'quantity' => 'decimal:2',
-        'price' => 'decimal:2',
+        'rate' => 'integer',
+        'quantity' => 'integer',
+        'price' => 'integer',
     ];
 
     public function lot()

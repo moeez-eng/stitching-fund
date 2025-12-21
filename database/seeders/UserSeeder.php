@@ -13,24 +13,19 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create Super Admin user
-        User::firstOrCreate([
-            'email' => 'superadmin@example.com',
-        ], [
-            'name' => 'Super Admin',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-            'role' => 'Super Admin',
+        // Create Super Admin user if not exists
+        $superAdmin = User::firstOrNew([
+            'email' => 'super@admin.com',
         ]);
 
-        // Create regular admin user
-        User::firstOrCreate([
-            'email' => 'admin@example.com',
-        ], [
-            'name' => 'Admin User',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-            'role' => 'admin',
-        ]);
+        // Only update if user was just created or if we want to ensure these values
+        if (!$superAdmin->exists || $superAdmin->wasRecentlyCreated) {
+            $superAdmin->fill([
+                'name' => 'Super Admin',
+                'password' => Hash::make('asadmin123'), // Change this to a secure password
+                'email_verified_at' => now(),
+                'role' => 'Super Admin',
+            ])->save();
+        }
     }
 }

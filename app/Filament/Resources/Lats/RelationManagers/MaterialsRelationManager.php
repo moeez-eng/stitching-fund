@@ -34,8 +34,10 @@ class MaterialsRelationManager extends RelationManager
                 Forms\Components\Select::make('unit')
                  ->options([
                     'yards' => 'Yards',
+                    'meters' => 'Meters',
                     'packet' => 'Packet',
-                    'roll' => 'roll',
+                    'pieces' => 'Pieces',
+                    'roll' => 'Roll',
                     'cone' => 'Cone',
                 ])
                 ->required(),

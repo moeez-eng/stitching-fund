@@ -59,7 +59,6 @@ class ExpenseRelationManager extends RelationManager
                Forms\Components\TextInput::make('pieces')
                 ->required()
                 ->numeric()
-                ->default(1)
                 ->live(onBlur: true)
                 ->afterStateUpdated(function ($state, callable $set, $get) {
                     $rate = (float) $get('rate');
@@ -84,9 +83,8 @@ class ExpenseRelationManager extends RelationManager
                 TextColumn::make('labour_type')
                     ->searchable(),
                 TextColumn::make('unit')
-                    ->numeric(0)
                     ->sortable()
-                    ->formatStateUsing(fn ($state) => number_format($state, 0, '.', ',')),
+                    ->formatStateUsing(fn ($state) => $state == 1 ? 'Yards' : 'Pieces'),
                 TextColumn::make('rate')
                     ->money('PKR')
                     ->numeric(0)
@@ -103,7 +101,7 @@ class ExpenseRelationManager extends RelationManager
                     ->formatStateUsing(fn ($state) => 'PKR ' . number_format($state, 0, '.', ','))
                     ->summarize(Sum::make('price')
                         ->formatStateUsing(fn (string $state) => 'Total: PKR ' . number_format($state, 0, '.', ','))
-                    ),
+                    )
             ])
             ->headerActions([
                 CreateAction::make()

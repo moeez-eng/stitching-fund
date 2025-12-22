@@ -15,6 +15,9 @@ class Lat extends Model
         'design_name',
         'customer_name',
         'total_price',
+        'pieces',
+        'profit_percentage',
+        'initial_investment',
     ];
 
     public function design()
@@ -35,6 +38,16 @@ class Lat extends Model
     public function expenses()
     {
         return $this->hasMany(Expense::class, 'lat_id');
+    }
+
+    public function summary()
+    {
+        return $this->hasOne(Summary::class, 'lat_id');
+    }
+
+    public function summaries()
+    {
+        return $this->hasMany(Summary::class, 'lat_id');
     }
 
     protected $appends = ['total_price'];

@@ -75,6 +75,7 @@ class LatsResource extends Resource
         return [
             RelationManagers\MaterialsRelationManager::class,
             RelationManagers\ExpenseRelationManager::class,
+            RelationManagers\SummaryRelationManager::class,
         ];
     }
    

@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('summaries', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('lat_id')->constrained('lats')->onDelete('cascade');
-            $table->string('type');
-            $table->decimal('amount', 15, 2)->nullable();
-            $table->timestamps();
+        Schema::table('users', function (Blueprint $table) {
+            $table->enum('status', ['active', 'inactive'])->default('active')->after('email');
         });
     }
 
@@ -25,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('summaries');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('status');
+        });
     }
 };

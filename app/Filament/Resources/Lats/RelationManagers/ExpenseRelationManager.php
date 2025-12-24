@@ -46,7 +46,7 @@ class ExpenseRelationManager extends RelationManager
                             $set('price', $rate);
                         }
                     }),
-                    Forms\Components\TextInput::make('rate')
+                Forms\Components\TextInput::make('rate')
                     ->required()
                     ->numeric()
                     ->live(onBlur: true)
@@ -56,22 +56,22 @@ class ExpenseRelationManager extends RelationManager
                             $set('price', $state * $pieces);
                         }
                     }),
-               Forms\Components\TextInput::make('pieces')
-                ->required()
-                ->numeric()
-                ->live(onBlur: true)
-                ->afterStateUpdated(function ($state, callable $set, $get) {
-                    $rate = (float) $get('rate');
-                    if ($rate) {
-                        $set('price', $rate * $state);
-                    }
-                }),
+                Forms\Components\TextInput::make('pieces')
+                    ->required()
+                    ->numeric()
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(function ($state, callable $set, $get) {
+                        $rate = (float) $get('rate');
+                        if ($rate) {
+                            $set('price', $rate * $state);
+                        }
+                    }),
                 Forms\Components\TextInput::make('price')
                     ->required()
                     ->numeric()
                     ->disabled()
                     ->dehydrated(),
-                            ]);
+            ]);
     }
 
     public function table(Table $table): Table

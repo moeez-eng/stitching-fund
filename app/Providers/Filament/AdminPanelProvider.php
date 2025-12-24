@@ -5,10 +5,13 @@ namespace App\Providers\Filament;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\Widgets;
+use Filament\Widgets\StatsOverview;
 use Filament\PanelProvider;
-use App\Filament\Pages\Auth\Register;
 use Filament\Support\Colors\Color;
-use Filament\Http\Middleware\Authenticate;
+use App\Filament\Pages\Auth\Register;
+use App\Http\Middleware\HandleGuestAccess;
+use App\Http\Middleware\CustomAuthenticate;
+use Filament\Http\Middleware\Authenticate as FilamentAuthenticate;
 use App\Filament\Register\Pages\RegisterPage;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -30,18 +33,18 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->registration(Register::class)
-            ->colors([
-                'primary' => Color::Amber,
-            ])
+            ->brandName('Lotrix')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
+            ->resources([
+                \App\Filament\Resources\UserInvitations\UserInvitationResource::class,
+            ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
-            ->pages([
-                Pages\Dashboard::class,
+            ->colors([
+                'primary' => Color::Purple,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -55,7 +58,7 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                \App\Http\Middleware\CustomAuthenticate::class,
             ]);
     }
 }

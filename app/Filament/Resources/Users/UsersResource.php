@@ -54,19 +54,18 @@ class UsersResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return Auth::user()->role === 'Super Admin';
+        $user = Auth::user();
+        return $user && in_array($user->role, ['Super Admin']);
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->role === 'Super Admin';
+        $user = Auth::user();
+        return $user && in_array($user->role, ['Super Admin']);
     }
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        logger()->info('UsersResource getEloquentQuery called');
-        $query = parent::getEloquentQuery();
-        logger()->info('Total users count: ' . $query->count());
-        return $query;
+        return parent::getEloquentQuery(); // Global scope handles privacy filtering
     }
 }

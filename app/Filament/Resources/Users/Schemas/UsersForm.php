@@ -31,9 +31,15 @@ class UsersForm
                         'Investor' => 'Investor',
                     ])
                     ->required(),
-                Forms\Components\Toggle::make('is_active')
+                Forms\Components\Toggle::make('status')
                     ->label('Active')
-                    ->default(true),
+                    ->default(true)
+                    ->getStateUsing(function ($record) {
+                        return $record->status === 'active';
+                    })
+                    ->dehydrateStateUsing(function ($state) {
+                        return $state ? 'active' : 'inactive';
+                    }),
             ]);
     }
 }

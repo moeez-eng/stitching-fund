@@ -54,17 +54,11 @@ class ContactsResource extends Resource
     public static function canViewAny(): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
-        // Debug: Log the actual role value
-        Log::info('User role: "' . $user->role . '"');
-        
-        // Check if user has the required role
-        $allowedRoles = ['Super Admin', 'Agency Owner'];
-        $hasAccess = in_array($user->role, $allowedRoles);
-        
-        Log::info('Has access: ' . ($hasAccess ? 'true' : 'false'));
-        
-        return $hasAccess;
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
+    }
+    
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery(); // Global scope handles privacy filtering
     }
 }

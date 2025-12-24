@@ -5,10 +5,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Auth;
 
 class Lat extends Model
 {
     use HasFactory;
+
+
+    protected static function boot()
+    {
+        parent::boot();
+        
+        // Only show Lats from same company
+        static::addGlobalScope(function ($builder) {
+            if (Auth::check() && Auth::user()->role !== 'Super Admin') {
+                $builder->where('company_name', Auth::user()->company_name);
+            }
+        });
+    }
 
     protected $fillable = [
         'lat_no',
@@ -18,6 +32,7 @@ class Lat extends Model
         'pieces',
         'profit_percentage',
         'initial_investment',
+        'company_name',
     ];
 
     public function design()

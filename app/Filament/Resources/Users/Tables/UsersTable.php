@@ -28,9 +28,15 @@ class UsersTable
                 TextColumn::make('role')
                     ->searchable()
                     ->sortable(),
-                ToggleColumn::make('is_active')
+                ToggleColumn::make('status')
                     ->label('Active')
-                    ->sortable(),
+                    ->sortable()
+                    ->getStateUsing(function ($record) {
+                        return $record->status === 'active';
+                    })
+                    ->updateStateUsing(function ($record, $state) {
+                        $record->update(['status' => $state ? 'active' : 'inactive']);
+                    }),
 
             ])
             ->filters([

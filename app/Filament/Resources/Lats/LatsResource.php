@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Log;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
 // use Filament\Resources\Pages\ViewRecord;
+use App\Models\Scopes\AgencyOwnerScope;
+use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\Lats\Pages\EditLats;
 use App\Filament\Resources\Lats\Pages\ListLats;
 use App\Filament\Resources\Lats\Pages\CreateLats;
@@ -39,6 +41,20 @@ class LatsResource extends Resource
     {
         return LatsTable::configure($table);
     }
+     public static function canCreate(): bool
+    {
+        return Auth::check(); // only logged-in can create
+    }
+
+    public static function canEdit($record): bool
+    {
+        return Auth::check(); // only logged-in can edit
+    }
+
+    public static function canDelete($record): bool
+    {
+        return Auth::check(); // only logged-in can delete
+    }
 
    
 
@@ -52,24 +68,21 @@ class LatsResource extends Resource
         ];
     }
 
-    public static function canViewAny(): bool
-    {
-        $user = Auth::user();
-        if (!$user) return false;
-        
-        // Check if user has the required role
-        $allowedRoles = ['Super Admin', 'Agency Owner'];
-        $hasAccess = in_array($user->role, $allowedRoles);
-        
-        Log::info('Has access: ' . ($hasAccess ? 'true' : 'false'));
-        
-        return $hasAccess;
+   public static function canViewAny(): bool
+{
+    if (!Auth::check()) {
+        return false;
     }
+    
+    return in_array(Auth::user()->role, ['Super Admin', 'Agency Owner']);
+}
 
-    public static function canCreate(): bool
-    {
-        return static::canViewAny();
-    }
+public static function getEloquentQuery(): Builder
+{
+    return parent::getEloquentQuery(); // Global scope handles privacy filtering
+}
+
+   
      public static function getRelations(): array
     {
         return [

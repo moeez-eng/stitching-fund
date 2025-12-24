@@ -36,24 +36,6 @@ class User extends Authenticatable implements FilamentUser
         return true;
     }
 
-    protected static function boot()
-    {
-        parent::boot();
-        
-        // Only show users from same company or themselves
-        static::addGlobalScope(function ($builder) {
-            if (Auth::check() && Auth::user()->role !== 'Super Admin') {
-                $user = Auth::user();
-                $builder->where(function ($query) use ($user) {
-                    $query->where('id', $user->id)
-                          ->orWhere('invited_by', $user->id)
-                          ->orWhere('company_name', $user->company_name);
-                });
-            }
-        });
-    }
-
-
     /**
      * Check if the user is an agency owner or admin
      *
@@ -62,11 +44,6 @@ class User extends Authenticatable implements FilamentUser
     public function isAgencyOwner(): bool
     {
         return $this->role === 'Agency Owner' || $this->role === 'Super Admin';
-    }
-    
-    public function invitations()
-    {
-        return $this->hasMany(UserInvitation::class, 'invited_by');
     }
     
     public function invitedUsers()

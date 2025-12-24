@@ -35,9 +35,6 @@ class AdminPanelProvider extends PanelProvider
             ->registration(Register::class)
             ->brandName('Lotrix')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
-            ->resources([
-                \App\Filament\Resources\UserInvitations\UserInvitationResource::class,
-            ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->colors([
                 'primary' => Color::Purple,
@@ -45,6 +42,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
+                Widgets\StatsOverview::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -56,9 +54,6 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-            ])
-            ->authMiddleware([
-                \App\Http\Middleware\CustomAuthenticate::class,
             ]);
     }
 }

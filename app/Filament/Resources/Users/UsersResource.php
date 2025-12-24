@@ -63,9 +63,4 @@ class UsersResource extends Resource
         $user = Auth::user();
         return $user && in_array($user->role, ['Super Admin']);
     }
-
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
-    {
-        return parent::getEloquentQuery(); // Global scope handles privacy filtering
-    }
 }

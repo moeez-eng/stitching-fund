@@ -55,12 +55,17 @@ class UsersResource extends Resource
     public static function canViewAny(): bool
     {
         $user = Auth::user();
-        return $user && in_array($user->role, ['Super Admin']);
+        return $user && $user->role === 'Super Admin';
     }
 
     public static function shouldRegisterNavigation(): bool
     {
         $user = Auth::user();
-        return $user && in_array($user->role, ['Super Admin']);
+        return $user && $user->role === 'Super Admin';
+    }
+    
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->forCurrentUser();
     }
 }

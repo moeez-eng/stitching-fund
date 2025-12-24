@@ -6,6 +6,7 @@ use App\Models\Lat;
 use App\Models\Design;
 use App\Models\Customer;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Cache;
@@ -34,7 +35,9 @@ class LatsForm
             Select::make('design_name')
                 ->label('Design')
                 ->options(function () {
-                    return \App\Models\Design::pluck('name', 'name')->toArray();
+                    return \App\Models\Design::forUser()
+                        ->pluck('name', 'name')
+                        ->toArray();
                 })
                 ->searchable()
                 ->preload()
@@ -54,7 +57,8 @@ class LatsForm
             Select::make('customer_name')
                 ->label('Customer')
                 ->options(function () {
-                    return \App\Models\Contact::where('ctype', 'customer')
+                    return \App\Models\Contact::forUser()
+                        ->where('ctype', 'customer')
                         ->get()
                         ->mapWithKeys(function ($contact) {
                             return [$contact->name => "{$contact->name} - {$contact->phone}"];

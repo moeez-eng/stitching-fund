@@ -3,17 +3,17 @@
 namespace App\Models;
 
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Support\Facades\Auth;
-
 
 class User extends Authenticatable implements FilamentUser
 {
-     use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
         'name',
@@ -21,8 +21,6 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'role',
         'status',
-        'invited_by',
-        'company_name',
     ];
 
     protected $hidden = [
@@ -32,27 +30,113 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(\Filament\Panel $panel): bool
     {
-        // Allow all authenticated users to access the Filament admin panel
         return true;
     }
 
     /**
+     * Check if the user is an admin (returns 1 for admin, 0 for non-admin)
+     */
+    public function isAdmin(): int
+    {
+        return ($this->role === 'Agency Owner' || $this->role === 'Super Admin') ? 1 : 0;
+    }
+
+    /**
      * Check if the user is an agency owner or admin
-     *
-     * @return bool
      */
     public function isAgencyOwner(): bool
     {
         return $this->role === 'Agency Owner' || $this->role === 'Super Admin';
     }
     
-    public function invitedUsers()
+    /**
+     * Scope to filter users based on current user's role
+     */
+    public function scopeForCurrentUser(Builder $query, ?User $user = null): Builder
     {
-        return $this->hasMany(User::class, 'invited_by');
+        $user = $user ?? Auth::user();
+        
+        // If no authenticated user, show nothing
+        if (!$user) {
+            return $query->whereRaw('1 = 0');
+        }
+        
+        // Super Admin sees all users
+        if ($user->role === 'Super Admin') {
+            return $query;
+        }
+        
+        // Agency Owner sees only themselves
+        if ($user->role === 'Agency Owner') {
+            return $query->where('id', $user->id);
+        }
+        
+        // Regular users only see themselves
+        return $query->where('id', $user->id);
     }
     
-    public function inviter()
+    /**
+     * Check if current user can view this user record
+     */
+    public function canBeViewedBy(?User $viewer = null): bool
     {
-        return $this->belongsTo(User::class, 'invited_by');
+        $viewer = $viewer ?? Auth::user();
+        
+        if (!$viewer) {
+            return false;
+        }
+        
+        // Super Admin can view anyone
+        if ($viewer->role === 'Super Admin') {
+            return true;
+        }
+        
+        // Agency Owner and Regular users can only view themselves
+        return $this->id === $viewer->id;
+    }
+    
+    /**
+     * Check if current user can edit this user record
+     */
+    public function canBeEditedBy(?User $editor = null): bool
+    {
+        $editor = $editor ?? Auth::user();
+        
+        if (!$editor) {
+            return false;
+        }
+        
+        // Super Admin can edit anyone
+        if ($editor->role === 'Super Admin') {
+            return true;
+        }
+        
+        // Agency Owner and Regular users can only edit themselves
+        return $this->id === $editor->id;
+    }
+    
+    /**
+     * Check if current user can delete this user record
+     */
+    public function canBeDeletedBy(?User $deleter = null): bool
+    {
+        $deleter = $deleter ?? Auth::user();
+        
+        if (!$deleter) {
+            return false;
+        }
+        
+        // Can't delete yourself
+        if ($this->id === $deleter->id) {
+            return false;
+        }
+        
+        // Only Super Admin can delete users
+        if ($deleter->role === 'Super Admin') {
+            return true;
+        }
+        
+        // Agency Owners and Regular users can't delete anyone
+        return false;
     }
 }

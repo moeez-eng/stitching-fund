@@ -53,12 +53,11 @@ class ContactsResource extends Resource
 
     public static function canViewAny(): bool
     {
-        $user = Auth::user();
-        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
+        return Contact::userCanViewContacts();
     }
     
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getEloquentQuery(); // Global scope handles privacy filtering
+        return parent::getEloquentQuery()->forUser();
     }
 }

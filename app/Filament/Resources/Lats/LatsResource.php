@@ -79,7 +79,7 @@ class LatsResource extends Resource
 
 public static function getEloquentQuery(): Builder
 {
-    return parent::getEloquentQuery(); // Global scope handles privacy filtering
+    return parent::getEloquentQuery()->forUser();
 }
 
    

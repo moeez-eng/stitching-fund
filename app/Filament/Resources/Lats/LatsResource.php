@@ -48,12 +48,12 @@ class LatsResource extends Resource
 
     public static function canEdit($record): bool
     {
-        return Auth::check(); // only logged-in can edit
+        return $record && $record->canBeManagedBy();
     }
 
     public static function canDelete($record): bool
     {
-        return Auth::check(); // only logged-in can delete
+        return $record && $record->canBeManagedBy();
     }
 
    
@@ -70,17 +70,13 @@ class LatsResource extends Resource
 
    public static function canViewAny(): bool
 {
-    if (!Auth::check()) {
-        return false;
-    }
-    
-    return in_array(Auth::user()->role, ['Super Admin', 'Agency Owner']);
+    return Lat::userCanViewLats(); // Any logged-in user can view lats
 }
 
-public static function getEloquentQuery(): Builder
-{
-    return parent::getEloquentQuery()->forUser();
-}
+ public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->forUser();
+    }
 
    
      public static function getRelations(): array

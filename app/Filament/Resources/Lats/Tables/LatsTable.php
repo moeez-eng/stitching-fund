@@ -18,7 +18,7 @@ class LatsTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->query(Lat::with(['materials', 'expenses','summary']))
+            ->query(Lat::with(['materials', 'expenses','summary'])->forUser())
             ->columns([
                TextColumn::make('lat_no')
                ->label('Lat No')

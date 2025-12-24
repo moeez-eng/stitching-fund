@@ -29,8 +29,10 @@ class LatsForm
                 ->numeric()
                 ->disabled()
                 ->dehydrated()
-                ->unique(ignoreRecord: true)
-                ->default(fn () => Lat::max('lat_no') + 1),
+                ->unique(ignoreRecord: true, modifyRuleUsing: function ($rule) {
+                    return $rule->where('user_id', Auth::id());
+                })
+                ->default(fn () => Lat::forUser()->max('lat_no') + 1),
             
             Select::make('design_name')
                 ->label('Design')

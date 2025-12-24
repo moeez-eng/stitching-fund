@@ -7,6 +7,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Log;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
@@ -103,7 +104,11 @@ class SummaryRelationManager extends RelationManager
                             return '';
                         }
 
-                        if ($record->is_percentage ?? false) {
+                        // Check for percentage more robustly
+                        $isPercentage = ($record->is_percentage ?? false) || 
+                                       (strpos($record->type ?? '', 'Profit Margin') !== false);
+                        
+                        if ($isPercentage) {
                             return new HtmlString("
                                 <span class='inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800'>
                                     {$state}%

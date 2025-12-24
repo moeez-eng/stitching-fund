@@ -77,13 +77,6 @@ class Lat extends Model
     {
         $user = $user ?? Auth::user();
         
-        // Debug logging
-        Log::info('forUser scope called', [
-            'user_id' => $user?->id,
-            'user_role' => $user?->role,
-            'authenticated' => Auth::check()
-        ]);
-        
         // If no user, return empty
         if (!$user) {
             return $query->whereRaw('1 = 0');
@@ -91,12 +84,10 @@ class Lat extends Model
         
         // Super Admin sees all lats
         if ($user->role === 'Super Admin') {
-            Log::info('Super Admin detected, returning all lats');
             return $query;
         }
         
         // Agency Owners and regular users only see their own lats
-        Log::info('Filtering lats for user_id: ' . $user->id);
         return $query->where('user_id', $user->id);
     }
     
@@ -144,11 +135,6 @@ class Lat extends Model
         
         // Calculate expense total
         $expenseTotal = $this->expenses()->sum('price');
-        
-        // Log the values for debugging
-        Log::info('Material Total: ' . $materialTotal);
-        Log::info('Expense Total: ' . $expenseTotal);
-        Log::info('Combined Total: ' . ($materialTotal + $expenseTotal));
         
         // Return the sum of both
         return $materialTotal + $expenseTotal;

@@ -7,7 +7,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
 use Illuminate\Support\HtmlString;
-use Illuminate\Support\Facades\Log;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
@@ -188,25 +187,143 @@ class SummaryRelationManager extends RelationManager
                             ->send();
                     }),
 
-                            // Action::make('download_report')
-                            //     ->label('Download Report')
-                            //     ->icon('heroicon-o-arrow-down-tray')
-                            //     ->color('success')
-                            //     ->action(function () use ($lat) {
-                            //         // Add export functionality here
-                            //         // Example: Generate PDF or Excel export
-                                    
-                        //             Notification::make()
-                        //                 ->title('Report Ready!')
-                        //                 ->success()
-                        //                 ->body('Financial report has been generated.')
-                        //                 ->send();
-                        //         }),
-                        ])
+                Action::make('download_report')
+                    ->label('Download Report')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->action(function () use ($lat) {
+                        // Generate HTML report content
+                        $htmlContent = $this->generatePdfReport($lat);
+                        
+                        // Return as HTML file that can be printed/saved as PDF
+                        return response()->streamDownload(function () use ($htmlContent) {
+                            echo $htmlContent;
+                        }, 'lat-summary-' . $lat->lat_no . '-' . date('Y-m-d') . '.html', [
+                            'Content-Type' => 'text/html',
+                            'Content-Disposition' => 'attachment; filename="lat-summary-' . $lat->lat_no . '-' . date('Y-m-d') . '.html"',
+                        ]);
+                    }),
+            ])
             ->filters([])
             ->actions([])
             ->bulkActions([]);
 
         return $table;
+    }
+
+    /**
+     * Generate PDF report for the lat summary
+     */
+    private function generatePdfReport($lat): string
+    {
+        // Calculate values
+        $materials = $lat->materials;
+        $expenses = $lat->expenses;
+        $initialInvestment = $lat->initial_investment ?? 0;
+        $materialsTotal = $materials->sum('price');
+        $expensesTotal = $expenses->sum('price');
+        $totalCost = $materialsTotal + $expensesTotal;
+        $profitPercentage = $lat->profit_percentage ?? 10;
+        $profitAmount = ($totalCost * $profitPercentage) / 100;
+        $sellingPrice = $totalCost + $profitAmount;
+        $pieces = $lat->pieces ?? 1;
+        $costPerPiece = $pieces > 0 ? $totalCost / $pieces : 0;
+        $sellingPricePerPiece = $pieces > 0 ? $sellingPrice / $pieces : 0;
+        $profitPerPiece = $pieces > 0 ? $profitAmount / $pieces : 0;
+        
+        // Summary data
+        $summaryData = [
+            ['Initial Investment', $initialInvestment, 'Starting capital'],
+            ['Materials Cost', $materialsTotal, 'Raw materials purchased'],
+            ['Labor & Expenses', $expensesTotal, 'Workers and other costs'],
+            ['Total Cost', $totalCost, 'All costs combined'],
+            ['Profit Margin', $profitPercentage . '%', 'Target profit percentage'],
+            ['Profit Amount', $profitAmount, 'Total profit earned'],
+            ['Final Selling Price', $sellingPrice, 'Total revenue from sales'],
+            ['Total Pieces', $pieces . ' pieces', 'Number of units produced'],
+            ['Cost Per Piece', $costPerPiece, 'Manufacturing cost per unit'],
+            ['Profit Per Piece', $profitPerPiece, 'Profit earned per unit'],
+            ['Selling Price Per Piece', $sellingPricePerPiece, 'Price to charge customers'],
+        ];
+        
+        // Generate HTML content
+        $html = '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Lat Summary Report - ' . $lat->lat_no . '</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+        .header { text-align: center; border-bottom: 2px solid #ddd; padding-bottom: 20px; margin-bottom: 30px; }
+        .company-name { font-size: 24px; font-weight: bold; color: #6366f1; }
+        .report-title { font-size: 18px; margin: 10px 0; }
+        .lat-info { background: #f8f9fa; padding: 30px; border-radius: 5px; margin-bottom: 20px; }
+        .section { margin-bottom: 30px; }
+        .section-title { font-size: 16px; font-weight: bold; color: #6366f1; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; font-weight: bold; }
+        th:nth-child(2) { text-align: right; }
+        .amount { text-align: right; font-weight: bold; }
+        .description { font-size: 12px; color: #666; }
+        .total { background: #e7f5ff; font-weight: bold; }
+        .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">Lotrix</div>
+        <div class="report-title">Lat Financial Summary Report</div>
+        <div>Generated on: ' . date('Y-m-d H:i:s') . '</div>
+    </div>
+    
+    <div class="lat-info">
+        <strong>Lat No:</strong> ' . $lat->lat_no . '<br><br>
+        <strong>Design:</strong> ' . $lat->design_name . '<br><br>
+        <strong>Customer:</strong> ' . $lat->customer_name . '
+    </div>
+    
+    <div class="section">
+        <div class="section-title">Financial Summary</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Amount</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>';
+        
+        foreach ($summaryData as $item) {
+            $amount = is_numeric($item[1]) ? 'PKR ' . number_format($item[1], 2) : $item[1];
+            $isTotal = strpos($item[0], 'Total') !== false || strpos($item[0], 'Final') !== false;
+            $rowClass = $isTotal ? 'total' : '';
+            
+            $html .= '<tr class="' . $rowClass . '">
+                <td>' . $item[0] . '</td>
+                <td class="amount">' . $amount . '</td>
+                <td class="description">' . $item[2] . '</td>
+            </tr>';
+        }
+        
+        $html .= '</tbody>
+        </table>
+    </div>';
+        
+      
+        
+       
+            
+         
+        
+        $html .= '<div class="footer">
+        <p>This report was generated by Lotrix - Lat Management System</p>
+        <p>Report ID: ' . uniqid() . '</p>
+    </div>
+</body>
+</html>';
+        
+        return $html;
     }
 }

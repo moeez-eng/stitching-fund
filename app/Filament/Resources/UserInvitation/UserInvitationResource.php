@@ -35,12 +35,14 @@ class UserInvitationResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return true;
+        // Hide from Investor role - only show to other roles
+        return Auth::user()?->role !== 'Investor';
     }
 
     public static function canCreate(): bool
     {
-        return true;
+        // Only allow non-Investor roles to create invitations
+        return Auth::user()?->role !== 'Investor';
     }
 
     public static function form(Schema $schema): Schema
@@ -172,6 +174,7 @@ class UserInvitationResource extends Resource
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return parent::getEloquentQuery()
+            ->where('invited_by', Auth::id())
             ->latest();
     }
 

@@ -7,9 +7,9 @@ use App\Models\UserInvitation;
 use Illuminate\Support\Facades\Log;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Form;
-use Illuminate\Support\Facades\Request;
 use Filament\Schemas\Components\Component;
 use Filament\Auth\Pages\Register as BaseRegister;
+use Filament\Forms\Components\TextInput;
 
 class Register extends BaseRegister
 {
@@ -21,40 +21,71 @@ class Register extends BaseRegister
         
         // Check for invitation token in URL
         $invitationCode = request('invitation');
-        Log::info('Invitation code from URL: ' . $invitationCode);
         
         if ($invitationCode) {
+            Log::info('Mount method - Invitation code found:', ['invitationCode' => $invitationCode]);
+
             $this->invitation = UserInvitation::where('unique_code', $invitationCode)
                 ->whereNull('accepted_at')
                 ->where('expires_at', '>', now())
                 ->first();
-            
-            Log::info('Invitation found: ' . ($this->invitation ? 'Yes' : 'No'));
+
+            Log::info('Mount method - Invitation query result:', ['invitation' => $this->invitation]);
             
             if ($this->invitation) {
-                // Pre-fill email from invitation
-                $this->form->fill(['email' => $this->invitation->email]);
-                Log::info('Email pre-filled: ' . $this->invitation->email);
+                // Store invitation data in session to persist between method calls
+                session(['invitation_data' => $this->invitation]);
+                
+                // Pre-fill form data with invitation details
+                $this->form->fill([
+                    'email' => $this->invitation->email,
+                    'role' => 'Investor'
+                ]);
             }
+        } else {
+            // Direct registration - set default role
+            $this->form->fill([
+                'role' => 'Agency Owner'
+            ]);
         }
     }
+
     public function form(Schema $schema): Schema
     {
-        // Check invitation directly in form method
+        // Check if this is an invitation registration by directly checking the URL parameter
         $invitationCode = request('invitation');
-        $invitation = $invitationCode ? UserInvitation::where('unique_code', $invitationCode)
-            ->whereNull('accepted_at')
-            ->where('expires_at', '>', now())
-            ->first() : null;
+        $isInvitation = !empty($invitationCode) && 
+                       UserInvitation::where('unique_code', $invitationCode)
+                                   ->whereNull('accepted_at')
+                                   ->where('expires_at', '>', now())
+                                   ->exists();
         
-        Log::info('Form method - invitation exists: ' . ($invitation ? 'Yes' : 'No'));
+        // Debug: Log the invitation status
+        Log::info('Form method - Invitation status:', [
+            'isInvitation' => $isInvitation,
+            'invitationCode' => $invitationCode
+        ]);
         
         $components = [
             $this->getNameFormComponent(),
+            
             $this->getEmailFormComponent()
-                ->disabled($invitation !== null),
+                ->disabled($isInvitation)
+                ->dehydrated(true), // Ensure value is included even when disabled
+            
             $this->getPasswordFormComponent(),
+            
             $this->getPasswordConfirmationFormComponent(),
+            
+            TextInput::make('role')
+                ->label('Role')
+                ->default($isInvitation ? 'Investor' : 'Agency Owner')
+                ->disabled(true) // Always disabled
+                ->dehydrated(true) // Ensure value is included even when disabled
+                ->required()
+                ->helperText($isInvitation 
+                    ? 'You are registering as an Investor via invitation link.' 
+                    : 'You are registering as an Agency Owner.'),
         ];
 
         return $schema
@@ -64,20 +95,15 @@ class Register extends BaseRegister
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Check invitation directly
-        $invitationCode = request('invitation');
-        $invitation = $invitationCode ? UserInvitation::where('unique_code', $invitationCode)
-            ->whereNull('accepted_at')
-            ->where('expires_at', '>', now())
-            ->first() : null;
-            
-        // Set role automatically based on invitation presence
-        if ($invitation) {
+        // Ensure role is set correctly based on invitation
+        if ($this->invitation) {
             $data['role'] = 'Investor';
-            $data['email'] = $invitation->email;
+            $data['email'] = $this->invitation->email;
         } else {
             $data['role'] = 'Agency Owner';
         }
+        
+        Log::info('Registration data before create:', $data);
         
         return $data;
     }
@@ -86,10 +112,15 @@ class Register extends BaseRegister
     {
         $user = parent::handleRegistration($data);
         
-        // Mark invitation as accepted if using invitation
+        // Mark invitation as accepted if it exists
         if ($this->invitation) {
             $this->invitation->update([
                 'accepted_at' => now(),
+            ]);
+            
+            Log::info('Invitation accepted:', [
+                'invitation_id' => $this->invitation->id,
+                'user_id' => $user->id
             ]);
         }
         

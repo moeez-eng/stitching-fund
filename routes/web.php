@@ -13,6 +13,11 @@ Route::get('/', function () {
     return redirect('/admin');
 })->name('home');
 
+// Add login route alias for Filament
+Route::get('/login', function () {
+    return redirect('/admin/login');
+})->name('login');
+
 // Route::get('/accept-invitation/{companySlug}/{uniqueCode}', [App\Http\Controllers\InvitationController::class, 'accept'])->name('accept.invitation');
 // Route::post('/accept-invitation/{companySlug}/{uniqueCode}', [App\Http\Controllers\InvitationController::class, 'store'])->name('accept.invitation.store');
 

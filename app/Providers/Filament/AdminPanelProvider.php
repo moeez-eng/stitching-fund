@@ -9,9 +9,6 @@ use Filament\Widgets\StatsOverviewWidget;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use App\Filament\Pages\Auth\Register;
-use App\Http\Middleware\HandleGuestAccess;
-use App\Http\Middleware\CustomAuthenticate;
-use App\Filament\Register\Pages\RegisterPage;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Routing\Middleware\SubstituteBindings;
@@ -38,6 +35,7 @@ class AdminPanelProvider extends PanelProvider
                 \Filament\Pages\Dashboard::class,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
+            ->discoverResources(in: app_path('Filament/Resources/UserInvitation'), for: 'App\\Filament\\Resources\\UserInvitation')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->colors([
                 'primary' => Color::Purple,
@@ -56,6 +54,9 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+            ])
+            ->authMiddleware([
+                FilamentAuthenticate::class,
             ]);
     }
 }

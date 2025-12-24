@@ -12,6 +12,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SummaryRelationManager extends RelationManager
 {
@@ -188,19 +189,20 @@ class SummaryRelationManager extends RelationManager
                     }),
 
                 Action::make('download_report')
-                    ->label('Download Report')
+                    ->label('Download PDF Report')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
                     ->action(function () use ($lat) {
-                        // Generate HTML report content
+                        // Generate PDF report directly from HTML
                         $htmlContent = $this->generatePdfReport($lat);
+                        $pdf = Pdf::loadHTML($htmlContent);
                         
-                        // Return as HTML file that can be printed/saved as PDF
-                        return response()->streamDownload(function () use ($htmlContent) {
-                            echo $htmlContent;
-                        }, 'lat-summary-' . $lat->lat_no . '-' . date('Y-m-d') . '.html', [
-                            'Content-Type' => 'text/html',
-                            'Content-Disposition' => 'attachment; filename="lat-summary-' . $lat->lat_no . '-' . date('Y-m-d') . '.html"',
+                        // Return as PDF file
+                        return response()->streamDownload(function () use ($pdf) {
+                            echo $pdf->output();
+                        }, 'lat-summary-' . $lat->lat_no . '-' . date('Y-m-d') . '.pdf', [
+                            'Content-Type' => 'application/pdf',
+                            'Content-Disposition' => 'attachment; filename="lat-summary-' . $lat->lat_no . '-' . date('Y-m-d') . '.pdf"',
                         ]);
                     }),
             ])
@@ -216,6 +218,14 @@ class SummaryRelationManager extends RelationManager
      */
     private function generatePdfReport($lat): string
     {
+        return $this->generateReadablePdfContent($lat);
+    }
+
+    /**
+     * Generate readable PDF content with clear sections
+     */
+    private function generateReadablePdfContent($lat): string
+    {
         // Calculate values
         $materials = $lat->materials;
         $expenses = $lat->expenses;
@@ -230,7 +240,7 @@ class SummaryRelationManager extends RelationManager
         $costPerPiece = $pieces > 0 ? $totalCost / $pieces : 0;
         $sellingPricePerPiece = $pieces > 0 ? $sellingPrice / $pieces : 0;
         $profitPerPiece = $pieces > 0 ? $profitAmount / $pieces : 0;
-        
+
         // Summary data
         $summaryData = [
             ['Initial Investment', $initialInvestment, 'Starting capital'],
@@ -253,21 +263,26 @@ class SummaryRelationManager extends RelationManager
     <meta charset="utf-8">
     <title>Lat Summary Report - ' . $lat->lat_no . '</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
-        .header { text-align: center; border-bottom: 2px solid #ddd; padding-bottom: 20px; margin-bottom: 30px; }
-        .company-name { font-size: 24px; font-weight: bold; color: #6366f1; }
-        .report-title { font-size: 18px; margin: 10px 0; }
-        .lat-info { background: #f8f9fa; padding: 30px; border-radius: 5px; margin-bottom: 20px; }
-        .section { margin-bottom: 30px; }
-        .section-title { font-size: 16px; font-weight: bold; color: #6366f1; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background: #f8f9fa; font-weight: bold; }
-        th:nth-child(2) { text-align: right; }
-        .amount { text-align: right; font-weight: bold; }
-        .description { font-size: 12px; color: #666; }
-        .total { background: #e7f5ff; font-weight: bold; }
-        .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+        body { font-family: Arial, sans-serif; margin: 20px; color: #000; line-height: 1.6; }
+        .header { text-align: center; border-bottom: 3px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+        .company-name { font-size: 28px; font-weight: bold; color: #000; margin-bottom: 5px; }
+        .report-title { font-size: 20px; margin: 10px 0; color: #333; }
+        .lat-info { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #ddd; }
+        .section { margin-bottom: 40px; page-break-inside: avoid; }
+        .section-title { font-size: 18px; font-weight: bold; color: #000; border-bottom: 2px solid #333; padding-bottom: 8px; margin-bottom: 20px; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 25px; border: 1px solid #ddd; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f0f0f0; font-weight: bold; color: #000; font-size: 14px; }
+        th:nth-child(2), td:nth-child(2) { text-align: right; font-weight: bold; }
+        .amount { text-align: right; font-weight: bold; color: #000; }
+        .description { font-size: 13px; color: #555; font-style: italic; }
+        .total { background: #f9f9f9; font-weight: bold; border-top: 2px solid #333; }
+        .total td { color: #000; font-weight: bold; }
+        .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .summary-card { background: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .summary-card h4 { margin: 0 0 8px 0; color: #000; font-size: 14px; }
+        .summary-card .value { font-size: 20px; font-weight: bold; color: #000; }
     </style>
 </head>
 <body>
@@ -278,48 +293,135 @@ class SummaryRelationManager extends RelationManager
     </div>
     
     <div class="lat-info">
-        <strong>Lat No:</strong> ' . $lat->lat_no . '<br><br>
-        <strong>Design:</strong> ' . $lat->design_name . '<br><br>
-        <strong>Customer:</strong> ' . $lat->customer_name . '
+        <h3>Lat Information</h3>
+        <p><strong>Lat No:</strong> ' . $lat->lat_no . '</p>
+        <p><strong>Design:</strong> ' . $lat->design_name . '</p>
+        <p><strong>Customer:</strong> ' . $lat->customer_name . '</p>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <h4>Total Cost</h4>
+            <div class="value">PKR ' . number_format($totalCost, 2) . '</div>
+        </div>
+        <div class="summary-card">
+            <h4>Final Selling Price</h4>
+            <div class="value">PKR ' . number_format($sellingPrice, 2) . '</div>
+        </div>
+        <div class="summary-card">
+            <h4>Profit Amount</h4>
+            <div class="value">PKR ' . number_format($profitAmount, 2) . '</div>
+        </div>
+        <div class="summary-card">
+            <h4>Profit Margin</h4>
+            <div class="value">' . $profitPercentage . '%</div>
+        </div>
     </div>
     
     <div class="section">
-        <div class="section-title">Financial Summary</div>
+        <div class="section-title">Cost Breakdown</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Cost Item</th>
+                    <th>Amount (PKR)</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Initial Investment</td>
+                    <td>' . number_format($initialInvestment, 2) . '</td>
+                    <td class="description">Starting capital</td>
+                </tr>
+                <tr>
+                    <td>Materials Cost</td>
+                    <td>' . number_format($materialsTotal, 2) . '</td>
+                    <td class="description">Raw materials purchased</td>
+                </tr>
+                <tr>
+                    <td>Labor & Expenses</td>
+                    <td>' . number_format($expensesTotal, 2) . '</td>
+                    <td class="description">Workers and other costs</td>
+                </tr>
+                <tr class="total">
+                    <td><strong>Total Cost</strong></td>
+                    <td><strong>' . number_format($totalCost, 2) . '</strong></td>
+                    <td class="description"><strong>All costs combined</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Pricing Information</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Pricing Item</th>
+                    <th>Value</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Profit Margin</td>
+                    <td>' . $profitPercentage . '%</td>
+                    <td class="description">Target profit percentage</td>
+                </tr>
+                <tr>
+                    <td>Profit Amount</td>
+                    <td>PKR ' . number_format($profitAmount, 2) . '</td>
+                    <td class="description">Total profit earned</td>
+                </tr>
+                <tr class="total">
+                    <td><strong>Final Selling Price</strong></td>
+                    <td><strong>PKR ' . number_format($sellingPrice, 2) . '</strong></td>
+                    <td class="description"><strong>Total revenue from sales</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Per Piece Details</div>
         <table>
             <thead>
                 <tr>
                     <th>Item</th>
-                    <th>Amount</th>
+                    <th>Value</th>
                     <th>Description</th>
                 </tr>
             </thead>
-            <tbody>';
-        
-        foreach ($summaryData as $item) {
-            $amount = is_numeric($item[1]) ? 'PKR ' . number_format($item[1], 2) : $item[1];
-            $isTotal = strpos($item[0], 'Total') !== false || strpos($item[0], 'Final') !== false;
-            $rowClass = $isTotal ? 'total' : '';
-            
-            $html .= '<tr class="' . $rowClass . '">
-                <td>' . $item[0] . '</td>
-                <td class="amount">' . $amount . '</td>
-                <td class="description">' . $item[2] . '</td>
-            </tr>';
-        }
-        
-        $html .= '</tbody>
+            <tbody>
+                <tr>
+                    <td>Total Pieces</td>
+                    <td>' . $pieces . ' pieces</td>
+                    <td class="description">Number of units produced</td>
+                </tr>
+                <tr>
+                    <td>Cost Per Piece</td>
+                    <td>PKR ' . number_format($costPerPiece, 2) . '</td>
+                    <td class="description">Manufacturing cost per unit</td>
+                </tr>
+                <tr>
+                    <td>Profit Per Piece</td>
+                    <td>PKR ' . number_format($profitPerPiece, 2) . '</td>
+                    <td class="description">Profit earned per unit</td>
+                </tr>
+                <tr class="total">
+                    <td><strong>Selling Price Per Piece</strong></td>
+                    <td><strong>PKR ' . number_format($sellingPricePerPiece, 2) . '</strong></td>
+                    <td class="description"><strong>Price to charge customers</strong></td>
+                </tr>
+            </tbody>
         </table>
-    </div>';
+    </div>
         
-      
-        
-       
-            
-         
-        
-        $html .= '<div class="footer">
-        <p>This report was generated by Lotrix - Lat Management System</p>
+    <div class="footer">
+        <p><strong>This report was generated by Lotrix - Lat Management System</strong></p>
         <p>Report ID: ' . uniqid() . '</p>
+        <p>Generated on ' . date('Y-m-d H:i:s') . '</p>
     </div>
 </body>
 </html>';

@@ -19,6 +19,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Filament\Http\Middleware\Authenticate as FilamentAuthenticate;
+use App\Http\Middleware\CheckUserStatus;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -57,6 +58,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 FilamentAuthenticate::class,
+                CheckUserStatus::class,
             ]);
     }
 }

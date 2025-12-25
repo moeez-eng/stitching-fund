@@ -35,7 +35,16 @@ class UsersTable
                         return $record->status === 'active';
                     })
                     ->updateStateUsing(function ($record, $state) {
+                        $oldStatus = $record->status;
                         $record->update(['status' => $state ? 'active' : 'inactive']);
+                        
+                        // If user is being set to inactive, logout their sessions
+                        if (!$state && $oldStatus === 'active') {
+                            // Logout all sessions for this user
+                            \Illuminate\Support\Facades\DB::table('sessions')
+                                ->where('user_id', $record->id)
+                                ->delete();
+                        }
                     }),
 
             ])

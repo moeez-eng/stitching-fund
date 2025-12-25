@@ -44,7 +44,6 @@ class SummaryRelationManager extends RelationManager
         $summaryData = [
             // COST BREAKDOWN SECTION
             ['type' => 'COST BREAKDOWN', 'amount' => null, 'is_header' => true, 'icon' => null],
-            ['type' => 'Initial Investment', 'amount' => $initialInvestment, 'is_header' => false, 'description' => 'Starting capital', 'icon' => 'heroicon-o-banknotes'],
             ['type' => 'Materials Cost', 'amount' => $materialsTotal, 'is_header' => false, 'description' => 'Raw materials purchased', 'icon' => 'heroicon-o-cube'],
             ['type' => 'Labor & Expenses', 'amount' => $expensesTotal, 'is_header' => false, 'description' => 'Workers and other costs', 'icon' => 'heroicon-o-users'],
             ['type' => 'Total Cost', 'amount' => $totalCost, 'is_header' => false, 'is_bold' => true, 'description' => 'All costs combined', 'icon' => 'heroicon-o-calculator'],
@@ -141,14 +140,6 @@ class SummaryRelationManager extends RelationManager
                     ->icon('heroicon-o-cog-6-tooth')
                     ->color('primary')
                     ->form([
-                        TextInput::make('initial_investment')
-                            ->label('Initial Investment')
-                            ->helperText('Starting capital for this project')
-                            ->numeric()
-                            ->prefix('PKR')
-                            ->default($lat->initial_investment ?? 0)
-                            ->required(),
-
                         TextInput::make('pieces')
                             ->label('Total Pieces to Produce')
                             ->helperText('How many units will you make?')
@@ -176,7 +167,6 @@ class SummaryRelationManager extends RelationManager
                     ])
                     ->action(function (array $data) use ($lat) {
                         $lat->update([
-                            'initial_investment' => $data['initial_investment'],
                             'pieces' => $data['pieces'],
                             'profit_percentage' => $data['profit_percentage'],
                         ]);
@@ -222,14 +212,13 @@ class SummaryRelationManager extends RelationManager
     }
 
     /**
-     * Generate readable PDF content with clear sections
+     * Generate compact 1-page PDF content
      */
     private function generateReadablePdfContent($lat): string
     {
         // Calculate values
         $materials = $lat->materials;
         $expenses = $lat->expenses;
-        $initialInvestment = $lat->initial_investment ?? 0;
         $materialsTotal = $materials->sum('price');
         $expensesTotal = $expenses->sum('price');
         $totalCost = $materialsTotal + $expensesTotal;
@@ -237,191 +226,293 @@ class SummaryRelationManager extends RelationManager
         $profitAmount = ($totalCost * $profitPercentage) / 100;
         $sellingPrice = $totalCost + $profitAmount;
         $pieces = $lat->pieces ?? 1;
-        $costPerPiece = $pieces > 0 ? $totalCost / $pieces : 0;
-        $sellingPricePerPiece = $pieces > 0 ? $sellingPrice / $pieces : 0;
-        $profitPerPiece = $pieces > 0 ? $profitAmount / $pieces : 0;
 
-        // Summary data
-        $summaryData = [
-            ['Initial Investment', $initialInvestment, 'Starting capital'],
-            ['Materials Cost', $materialsTotal, 'Raw materials purchased'],
-            ['Labor & Expenses', $expensesTotal, 'Workers and other costs'],
-            ['Total Cost', $totalCost, 'All costs combined'],
-            ['Profit Margin', $profitPercentage . '%', 'Target profit percentage'],
-            ['Profit Amount', $profitAmount, 'Total profit earned'],
-            ['Final Selling Price', $sellingPrice, 'Total revenue from sales'],
-            ['Total Pieces', $pieces . ' pieces', 'Number of units produced'],
-            ['Cost Per Piece', $costPerPiece, 'Manufacturing cost per unit'],
-            ['Profit Per Piece', $profitPerPiece, 'Profit earned per unit'],
-            ['Selling Price Per Piece', $sellingPricePerPiece, 'Price to charge customers'],
-        ];
-        
-        // Generate HTML content
+        // Generate HTML content with compact layout
         $html = '<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <title>Lat Summary Report - ' . $lat->lat_no . '</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; color: #000; line-height: 1.6; }
-        .header { text-align: center; border-bottom: 3px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
-        .company-name { font-size: 28px; font-weight: bold; color: #000; margin-bottom: 5px; }
-        .report-title { font-size: 20px; margin: 10px 0; color: #333; }
-        .lat-info { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #ddd; }
-        .section { margin-bottom: 40px; page-break-inside: avoid; }
-        .section-title { font-size: 18px; font-weight: bold; color: #000; border-bottom: 2px solid #333; padding-bottom: 8px; margin-bottom: 20px; text-transform: uppercase; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 25px; border: 1px solid #ddd; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background: #f0f0f0; font-weight: bold; color: #000; font-size: 14px; }
-        th:nth-child(2), td:nth-child(2) { text-align: right; font-weight: bold; }
-        .amount { text-align: right; font-weight: bold; color: #000; }
-        .description { font-size: 13px; color: #555; font-style: italic; }
-        .total { background: #f9f9f9; font-weight: bold; border-top: 2px solid #333; }
-        .total td { color: #000; font-weight: bold; }
-        .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
-        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
-        .summary-card { background: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
-        .summary-card h4 { margin: 0 0 8px 0; color: #000; font-size: 14px; }
-        .summary-card .value { font-size: 20px; font-weight: bold; color: #000; }
+        @page { 
+            size: A4; 
+            margin: 12mm; 
+            @bottom-center { 
+                content: "Page " counter(page) " of 1"; 
+                font-size: 9px; 
+                color: #666; 
+            } 
+        }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            color: #000; 
+            line-height: 1.2; 
+            font-size: 10px;
+        }
+        .header { 
+            text-align: center; 
+            border-bottom: 2px solid #333; 
+            padding-bottom: 8px; 
+            margin-bottom: 12px; 
+        }
+        .company-name { font-size: 20px; font-weight: bold; color: #000; margin: 0; }
+        .report-title { font-size: 14px; margin: 3px 0; color: #333; }
+        .summary-cards { 
+            display: flex; 
+            flex-direction: row; 
+            gap: 8px; 
+            margin-bottom: 15px; 
+        }
+        .summary-card { 
+            background: #f5f5f5; 
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px; 
+            border: 1px solid #ccc; 
+            border-radius: 3px; 
+            text-align: center;
+        }
+        .summary-card h4 { 
+            margin: 0 0 3px 0; 
+            color: #000; 
+            font-size: 10px; 
+            font-weight: bold;
+        }
+        .summary-card .value { 
+            font-size: 14px; 
+            font-weight: bold; 
+            color: #000; 
+            margin: 0;
+        }
+        .summary-card .item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+        .two-column {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .two-column > div {
+            flex: 1;
+        }
+        .section-title { 
+            font-size: 12px; 
+            font-weight: bold; 
+            color: #000; 
+            border-bottom: 1px solid #333; 
+            padding-bottom: 3px; 
+            margin-bottom: 8px; 
+            text-transform: uppercase; 
+            background: #f0f0f0;
+            padding: 5px;
+            border-radius: 2px;
+        }
+        .compact-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 12px; 
+            border: 1px solid #ddd; 
+            font-size: 9px;
+        }
+        .compact-table th, .compact-table td { 
+            padding: 4px 6px; 
+            text-align: left; 
+            border-bottom: 1px solid #ddd; 
+            vertical-align: top;
+        }
+        .compact-table th { 
+            background: #e8e8e8; 
+            font-weight: bold; 
+            color: #000; 
+            font-size: 9px;
+        }
+        .compact-table th:nth-child(2), .compact-table td:nth-child(2) { 
+            text-align: right; 
+            font-weight: bold; 
+            min-width: 70px;
+        }
+        .compact-table th:nth-child(3), .compact-table td:nth-child(3) { 
+            font-size: 8px; 
+            color: #666;
+            font-style: italic;
+        }
+        .total { 
+            background: #e8e8e8; 
+            font-weight: bold; 
+            border-top: 2px solid #333; 
+        }
+        .total td { 
+            color: #000; 
+            font-weight: bold; 
+        }
+        .info-box {
+            background: #f8f8f8;
+            padding: 8px;
+            border-radius: 3px;
+            margin-bottom: 12px;
+            border: 1px solid #ddd;
+            font-size: 9px;
+        }
+        .footer {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 9px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="company-name">Lotrix</div>
         <div class="report-title">Lat Financial Summary Report</div>
-        <div>Generated on: ' . date('Y-m-d H:i:s') . '</div>
+        <div>Lat No: ' . $lat->lat_no . ' | Date: ' . date('Y-m-d H:i:s') . '</div>
     </div>
     
-    <div class="lat-info">
-        <h3>Lat Information</h3>
-        <p><strong>Lat No:</strong> ' . $lat->lat_no . '</p>
-        <p><strong>Design:</strong> ' . $lat->design_name . '</p>
-        <p><strong>Customer:</strong> ' . $lat->customer_name . '</p>
+    <div class="info-box">
+        <strong>Customer:</strong> ' . $lat->customer_name . ' | 
+        <strong>Design:</strong> ' . $lat->design_name . ' | 
+        <strong>Pieces:</strong> ' . $pieces . '
     </div>
 
-    <div class="summary-grid">
+    <div class="summary-cards">
         <div class="summary-card">
-            <h4>Total Cost</h4>
-            <div class="value">PKR ' . number_format($totalCost, 2) . '</div>
-        </div>
-        <div class="summary-card">
-            <h4>Final Selling Price</h4>
-            <div class="value">PKR ' . number_format($sellingPrice, 2) . '</div>
-        </div>
-        <div class="summary-card">
-            <h4>Profit Amount</h4>
-            <div class="value">PKR ' . number_format($profitAmount, 2) . '</div>
-        </div>
-        <div class="summary-card">
-            <h4>Profit Margin</h4>
-            <div class="value">' . $profitPercentage . '%</div>
+            <div class="item">
+                <h4>Total Cost</h4>
+                <div class="value">PKR ' . number_format($totalCost, 0) . '</div>
+            </div>
+            <div class="item">
+                <h4>Selling Price</h4>
+                <div class="value">PKR ' . number_format($sellingPrice, 0) . '</div>
+            </div>
+            <div class="item">
+                <h4>Profit Amount</h4>
+                <div class="value">PKR ' . number_format($profitAmount, 0) . '</div>
+            </div>
+            <div class="item">
+                <h4>Profit Margin</h4>
+                <div class="value">' . $profitPercentage . '%</div>
+            </div>
         </div>
     </div>
     
-    <div class="section">
-        <div class="section-title">Cost Breakdown</div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Cost Item</th>
-                    <th>Amount (PKR)</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Initial Investment</td>
-                    <td>' . number_format($initialInvestment, 2) . '</td>
-                    <td class="description">Starting capital</td>
-                </tr>
-                <tr>
-                    <td>Materials Cost</td>
-                    <td>' . number_format($materialsTotal, 2) . '</td>
-                    <td class="description">Raw materials purchased</td>
-                </tr>
-                <tr>
-                    <td>Labor & Expenses</td>
-                    <td>' . number_format($expensesTotal, 2) . '</td>
-                    <td class="description">Workers and other costs</td>
-                </tr>
-                <tr class="total">
-                    <td><strong>Total Cost</strong></td>
-                    <td><strong>' . number_format($totalCost, 2) . '</strong></td>
-                    <td class="description"><strong>All costs combined</strong></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Pricing Information</div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Pricing Item</th>
-                    <th>Value</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Profit Margin</td>
-                    <td>' . $profitPercentage . '%</td>
-                    <td class="description">Target profit percentage</td>
-                </tr>
-                <tr>
-                    <td>Profit Amount</td>
-                    <td>PKR ' . number_format($profitAmount, 2) . '</td>
-                    <td class="description">Total profit earned</td>
-                </tr>
-                <tr class="total">
-                    <td><strong>Final Selling Price</strong></td>
-                    <td><strong>PKR ' . number_format($sellingPrice, 2) . '</strong></td>
-                    <td class="description"><strong>Total revenue from sales</strong></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Per Piece Details</div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Value</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Total Pieces</td>
-                    <td>' . $pieces . ' pieces</td>
-                    <td class="description">Number of units produced</td>
-                </tr>
-                <tr>
-                    <td>Cost Per Piece</td>
-                    <td>PKR ' . number_format($costPerPiece, 2) . '</td>
-                    <td class="description">Manufacturing cost per unit</td>
-                </tr>
-                <tr>
-                    <td>Profit Per Piece</td>
-                    <td>PKR ' . number_format($profitPerPiece, 2) . '</td>
-                    <td class="description">Profit earned per unit</td>
-                </tr>
-                <tr class="total">
-                    <td><strong>Selling Price Per Piece</strong></td>
-                    <td><strong>PKR ' . number_format($sellingPricePerPiece, 2) . '</strong></td>
-                    <td class="description"><strong>Price to charge customers</strong></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <div class="two-column">
+        <div>
+            <div class="section-title">Cost Breakdown</div>
+            <table class="compact-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Amount (PKR)</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Materials Cost</td>
+                        <td>' . number_format($materialsTotal, 0) . '</td>
+                        <td>Raw materials</td>
+                    </tr>
+                    <tr>
+                        <td>Labor & Expenses</td>
+                        <td>' . number_format($expensesTotal, 0) . '</td>
+                        <td>Workers & costs</td>
+                    </tr>
+                    <tr class="total">
+                        <td><strong>Total Cost</strong></td>
+                        <td><strong>' . number_format($totalCost, 0) . '</strong></td>
+                        <td><strong>All costs</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
         
+        <div>
+            <div class="section-title">Pricing Details</div>
+            <table class="compact-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Value</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Profit Margin</td>
+                        <td>' . $profitPercentage . '%</td>
+                        <td>Target percentage</td>
+                    </tr>
+                    <tr>
+                        <td>Profit Amount</td>
+                        <td>PKR ' . number_format($profitAmount, 0) . '</td>
+                        <td>Total profit</td>
+                    </tr>
+                    <tr class="total">
+                        <td><strong>Final Selling Price</strong></td>
+                        <td><strong>PKR ' . number_format($sellingPrice, 0) . '</strong></td>
+                        <td><strong>Total revenue</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="section-title">Financial Summary</div>
+    <table class="compact-table">
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>% of Cost</th>
+                <th>Per Piece</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Materials Cost</td>
+                <td>PKR ' . number_format($materialsTotal, 0) . '</td>
+                <td>' . ($totalCost > 0 ? round(($materialsTotal/$totalCost)*100, 1) : 0) . '%</td>
+                <td>PKR ' . number_format($materialsTotal/$pieces, 0) . '</td>
+            </tr>
+            <tr>
+                <td>Labor & Expenses</td>
+                <td>PKR ' . number_format($expensesTotal, 0) . '</td>
+                <td>' . ($totalCost > 0 ? round(($expensesTotal/$totalCost)*100, 1) : 0) . '%</td>
+                <td>PKR ' . number_format($expensesTotal/$pieces, 0) . '</td>
+            </tr>
+            <tr class="total">
+                <td><strong>Total Cost</strong></td>
+                <td><strong>PKR ' . number_format($totalCost, 0) . '</strong></td>
+                <td><strong>100%</strong></td>
+                <td><strong>PKR ' . number_format($totalCost/$pieces, 0) . '</strong></td>
+            </tr>
+            <tr>
+                <td>Profit Amount</td>
+                <td>PKR ' . number_format($profitAmount, 0) . '</td>
+                <td>' . round($profitPercentage, 1) . '%</td>
+                <td>PKR ' . number_format($profitAmount/$pieces, 0) . '</td>
+            </tr>
+            <tr class="total">
+                <td><strong>Final Selling Price</strong></td>
+                <td><strong>PKR ' . number_format($sellingPrice, 0) . '</strong></td>
+                <td><strong>' . round(100 + $profitPercentage, 1) . '%</strong></td>
+                <td><strong>PKR ' . number_format($sellingPrice / $pieces, 0) . '</strong></td>
+            </tr>
+        </tbody>
+    </table>
+    
     <div class="footer">
-        <p><strong>This report was generated by Lotrix - Lat Management System</strong></p>
-        <p>Report ID: ' . uniqid() . '</p>
-        <p>Generated on ' . date('Y-m-d H:i:s') . '</p>
+        <p><strong>Lotrix - Lat Management System</strong></p>
+        <p>Report ID: ' . uniqid() . ' | Generated: ' . date('Y-m-d H:i:s') . '</p>
     </div>
 </body>
 </html>';

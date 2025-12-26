@@ -103,8 +103,12 @@ class Register extends BaseRegister
             $data['role'] = 'Agency Owner';
         }
         
-        // Set new user status to inactive
-        $data['status'] = 'inactive';
+        // Set new user status to inactive, except Super Admin
+        if ($data['role'] === 'Super Admin') {
+            $data['status'] = 'active';
+        } else {
+            $data['status'] = 'inactive';
+        }
         
         Log::info('Registration data before create:', $data);
         

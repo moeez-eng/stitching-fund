@@ -31,8 +31,8 @@ class CheckUserStatus
                 $request->session()->regenerateToken();
                 
                 // Redirect to login with message
-                return redirect()->route('filament.auth.login')
-                    ->with('status', 'you are inactive please superadmin sa rabta kary');
+                return redirect()->route('filament.admin.auth.login')
+                    ->with('status', 'Your account is inactive. Please contact support.');
             }
         }
 

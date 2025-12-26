@@ -18,14 +18,13 @@ class UserSeeder extends Seeder
             'email' => 'super@admin.com',
         ]);
 
-        // Only update if user was just created or if we want to ensure these values
-        if (!$superAdmin->exists || $superAdmin->wasRecentlyCreated) {
-            $superAdmin->fill([
-                'name' => 'Super Admin',
-                'password' => Hash::make('asadmin123'), // Change this to a secure password
-                'email_verified_at' => now(),
-                'role' => 'Super Admin',
-            ])->save();
-        }
+        // Always update superadmin to ensure status is active
+        $superAdmin->fill([
+            'name' => 'Super Admin',
+            'password' => Hash::make('asadmin123'), // Change this to a secure password
+            'email_verified_at' => now(),
+            'role' => 'Super Admin',
+            'status' => 'active', // Super Admin should be active by default
+        ])->save();
     }
 }

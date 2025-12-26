@@ -11,8 +11,12 @@ class CreateUsers extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Set default status to inactive for new users
-        $data['status'] = 'inactive';
+        // Set default status to inactive for new users, except Super Admin
+        if ($data['role'] === 'Super Admin') {
+            $data['status'] = 'active';
+        } else {
+            $data['status'] = 'inactive';
+        }
         
         return $data;
     }

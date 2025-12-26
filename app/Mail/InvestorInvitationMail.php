@@ -30,7 +30,7 @@ class InvestorInvitationMail extends Mailable
             view: 'emails.investor-invitation',
             with: [
                 'invitation' => $this->invitation,
-                'registerUrl' => route('filament.admin.auth.register') . '?invitation=' . $this->invitation->unique_code,
+                'registerUrl' => route('filament.admin.auth.register', ['invitation' => $this->invitation->unique_code]),
             ]
         );
     }

@@ -115,7 +115,7 @@ class SummaryRelationManager extends RelationManager
                             ");
                         }
 
-                        if ($record->is_quantity ?? false) {
+                        if (($record->is_quantity ?? false) || strpos($record->type ?? '', 'Total Pieces') !== false) {
                             return new HtmlString("
                                 <span class='inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-800'>
                                     {$state} pieces

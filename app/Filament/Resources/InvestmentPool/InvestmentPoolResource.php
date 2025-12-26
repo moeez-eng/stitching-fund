@@ -101,6 +101,45 @@ class InvestmentPoolResource extends Resource
         return $query->whereRaw('1 = 0');
     }
 
+    public static function canEdit($record): bool
+    {
+        $user = Auth::user();
+        if (!$user) return false;
+        
+        // Super Admin can edit all
+        if ($user->role === 'Super Admin') return true;
+        
+        // Agency Owner can edit their own pools
+        if ($user->role === 'Agency Owner' && $record->user_id === $user->id) return true;
+        
+        // Investors cannot edit
+        return false;
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = Auth::user();
+        if (!$user) return false;
+        
+        // Super Admin and Agency Owner can create
+        return in_array($user->role, ['Super Admin', 'Agency Owner']);
+    }
+
+    public static function canDelete($record): bool
+    {
+        $user = Auth::user();
+        if (!$user) return false;
+        
+        // Super Admin can delete all
+        if ($user->role === 'Super Admin') return true;
+        
+        // Agency Owner can delete their own pools
+        if ($user->role === 'Agency Owner' && $record->user_id === $user->id) return true;
+        
+        // Investors cannot delete
+        return false;
+    }
+
     protected static function mutateFormDataBeforeSave(array $data): array
     {
         // Debug logging

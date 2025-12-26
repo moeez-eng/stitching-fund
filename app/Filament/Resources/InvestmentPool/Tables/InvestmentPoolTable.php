@@ -10,6 +10,7 @@ use Filament\Actions\ViewAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Illuminate\Support\Facades\Auth;
 
 class InvestmentPoolTable
 {
@@ -86,13 +87,16 @@ class InvestmentPoolTable
                     ->query(fn ($query) => $query->where('percentage_collected', 0)),
             ])
             ->actions([
-              EditAction::make(),
+              EditAction::make()
+                  ->visible(fn () => Auth::user()?->role !== 'Investor'),
               ViewAction::make(),
-              DeleteAction::make(),
+              DeleteAction::make()
+                  ->visible(fn () => Auth::user()?->role !== 'Investor'),
             ])
             ->bulkActions([
               BulkActionGroup::make([
-                  DeleteBulkAction::make(),
+                  DeleteBulkAction::make()
+                      ->visible(fn () => Auth::user()?->role !== 'Investor'),
                 ]),
             ]);
     }

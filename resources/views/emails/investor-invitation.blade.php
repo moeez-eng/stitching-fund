@@ -46,7 +46,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>{{ config('Lotrix') }}</h1>
+            <h1>{{ config('app.name') }}</h1>
         </div>
         <div class="content">
             <h2>Invitation to Join as Investor</h2>
@@ -66,7 +66,7 @@
             <p>If you didn't expect this invitation, you can safely ignore this email.</p>
         </div>
         <div class="footer">
-            <p>&copy; {{ date('Y') }} {{ config('Lotrix') }}. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
         </div>
     </div>
 </body>

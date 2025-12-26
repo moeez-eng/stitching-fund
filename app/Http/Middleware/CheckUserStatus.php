@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
+use Filament\Notifications\Notification;
 
 class CheckUserStatus
 {
@@ -21,18 +22,18 @@ class CheckUserStatus
             
             // Check if user is inactive
             if ($user->status === 'inactive') {
+                // Send notification using Filament's notification system
+                Notification::make()
+                    ->title('Your account is inactive')
+                    ->body('Please contact admin')
+                    ->danger()
+                    ->send();
+                
                 // Logout the user
                 Auth::logout();
                 
-                // Invalidate session
-                $request->session()->invalidate();
-                
-                // Regenerate CSRF token
-                $request->session()->regenerateToken();
-                
-                // Redirect to login with message
-                return redirect()->route('filament.admin.auth.login')
-                    ->with('status', 'Your account is inactive. Please contact support.');
+                // Redirect to login
+                return redirect()->route('filament.admin.auth.login');
             }
         }
 

@@ -20,9 +20,19 @@ class CreateUserInvitation extends CreateRecord
         
         try {
             Mail::to($invitation->email)->send(new InvestorInvitationMail($invitation));
+            \Filament\Notifications\Notification::make()
+                ->title('Invitation sent successfully')
+                ->body('Email sent to ' . $invitation->email)
+                ->success()
+                ->send();
         } catch (\Exception $e) {
             // Log error but don't fail the creation
             Log::error('Failed to send invitation email: ' . $e->getMessage());
+            \Filament\Notifications\Notification::make()
+                ->title('Failed to send invitation')
+                ->body('Error: ' . $e->getMessage())
+                ->danger()
+                ->send();
         }
     }
 

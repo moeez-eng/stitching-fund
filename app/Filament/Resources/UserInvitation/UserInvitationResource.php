@@ -18,6 +18,9 @@ use Filament\Actions\DeleteAction;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
 use Filament\Actions\DeleteBulkAction;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\InvestorInvitationMail;
+use Illuminate\Support\Facades\Log;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 
@@ -158,8 +161,21 @@ class UserInvitationResource extends Resource
                     ->label('Resend Email')
                     ->icon('heroicon-o-paper-airplane')
                     ->action(function (UserInvitation $record) {
-                        // TODO: Send email notification
-                        // This will trigger the email sending logic
+                        try {
+                            Mail::to($record->email)->send(new InvestorInvitationMail($record));
+                            \Filament\Notifications\Notification::make()
+                                ->title('Invitation resent successfully')
+                                ->body('Email sent to ' . $record->email)
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Failed to resend invitation')
+                                ->body('Error: ' . $e->getMessage())
+                                ->danger()
+                                ->send();
+                            Log::error('Failed to resend invitation email: ' . $e->getMessage());
+                        }
                     })
                     ->visible(fn(UserInvitation $record) => $record->isValid()),
 

@@ -13,6 +13,15 @@ return new class extends Migration
     {
         Schema::create('investment_pools', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('lat_id')->nullable();
+            $table->string('design_name')->nullable();
+            $table->decimal('amount_required', 15, 2)->default(0);
+            $table->integer('number_of_partners')->default(1);
+            $table->decimal('total_collected', 15, 2)->default(0);
+            $table->decimal('percentage_collected', 5, 2)->default(0);
+            $table->decimal('remaining_amount', 15, 2)->default(0);
+            $table->json('partners')->nullable();
+            $table->foreignId('user_id')->nullable();
             $table->timestamps();
         });
     }

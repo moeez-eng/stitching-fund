@@ -5,6 +5,10 @@ namespace App\Filament\Resources\InvestmentPool;
 use BackedEnum;
 use UnitEnum;
 use App\Models\InvestmentPool;
+use App\Models\Lat;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Filament\Tables\Table;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
@@ -47,5 +51,43 @@ class InvestmentPoolResource extends Resource
             'create' => CreateInvestmentPool::route('/create'),
             'edit' => EditInvestmentPool::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        // Temporarily remove user filter to test if data shows
+        return parent::getEloquentQuery();
+    }
+
+    protected static function mutateFormDataBeforeSave(array $data): array
+    {
+        // Debug logging
+        Log::info('mutateFormDataBeforeSave called with data: ', $data);
+
+        // Ensure design_name is set from lat_id if not provided
+        if (isset($data['lat_id']) && empty($data['design_name'])) {
+            $designName = Lat::find($data['lat_id'])?->design_name;
+            $data['design_name'] = $designName;
+            Log::info('Setting design_name to: ' . $designName);
+        }
+
+        // Process partners data to include investment_percentage
+        if (isset($data['partners']) && is_array($data['partners'])) {
+            $amountRequired = $data['amount_required'] ?? 0;
+            Log::info('Processing partners with amount_required: ' . $amountRequired);
+            
+            $data['partners'] = collect($data['partners'])->map(function ($partner) use ($amountRequired) {
+                if (isset($partner['investment_amount']) && $amountRequired > 0) {
+                    $partner['investment_percentage'] = round(($partner['investment_amount'] / $amountRequired) * 100);
+                    Log::info('Partner percentage calculated: ' . $partner['investment_percentage']);
+                } else {
+                    $partner['investment_percentage'] = 0;
+                }
+                return $partner;
+            })->toArray();
+        }
+
+        Log::info('Final data before save: ', $data);
+        return $data;
     }
 }

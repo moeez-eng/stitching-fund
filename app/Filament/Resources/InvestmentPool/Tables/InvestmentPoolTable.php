@@ -7,7 +7,6 @@ use Filament\Tables\Table;
 use App\Models\InvestmentPool;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -61,6 +60,12 @@ class InvestmentPoolTable
                     ->color(fn (InvestmentPool $record): string => 
                         $record->remaining_amount > 0 ? 'warning' : 'success'
                     ),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Created')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('lat_id')
@@ -68,28 +73,27 @@ class InvestmentPoolTable
                     ->relationship('lat', 'lat_no')
                     ->searchable(),
 
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('Collection Status')
-                    ->options([
-                        'completed' => 'Fully Collected',
-                        'partial' => 'Partially Collected',
-                        'pending' => 'Not Started',
-                    ])
-                    ->query(fn ($query) => $query->where('percentage_collected', '>=', 100), 'completed')
-                    ->query(fn ($query) => $query->where('percentage_collected', '>', 0)->where('percentage_collected', '<', 100), 'partial')
-                    ->query(fn ($query) => $query->where('percentage_collected', '=', 0), 'pending'),
+                Tables\Filters\Filter::make('status')
+                    ->label('Fully Collected')
+                    ->query(fn ($query) => $query->where('percentage_collected', '>=', 100)),
+
+                Tables\Filters\Filter::make('partial')
+                    ->label('Partially Collected')
+                    ->query(fn ($query) => $query->whereBetween('percentage_collected', [0.01, 99.99])),
+
+                Tables\Filters\Filter::make('pending')
+                    ->label('Not Started')
+                    ->query(fn ($query) => $query->where('percentage_collected', 0)),
             ])
             ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
+              EditAction::make(),
+              ViewAction::make(),
+              DeleteAction::make(),
             ])
             ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+              BulkActionGroup::make([
+                  DeleteBulkAction::make(),
                 ]),
-            ])
-            ->emptyStateActions([
-                CreateAction::make(),
             ]);
     }
 }

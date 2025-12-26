@@ -26,7 +26,18 @@ class InvestmentPoolForm
                     ->schema([
                         Select::make('lat_id')
                             ->label('Lot Number')
-                            ->options(Lat::where('user_id', Auth::id())->pluck('lat_no', 'id'))
+                            ->options(function () {
+                                $user = Auth::user();
+                                if (!$user) return collect();
+                                
+                                // For investors, get LAT records from their agency owner
+                                if ($user->role === 'Investor' && $user->agency_owner_id) {
+                                    return Lat::where('user_id', $user->agency_owner_id)->pluck('lat_no', 'id');
+                                }
+                                
+                                // For others, get their own LAT records
+                                return Lat::where('user_id', $user->id)->pluck('lat_no', 'id');
+                            })
                             ->required()
                             ->reactive()
                             ->afterStateUpdated(fn ($state, callable $set) => $set('design_name', Lat::find($state)?->design_name)),

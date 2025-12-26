@@ -383,26 +383,29 @@ class SummaryRelationManager extends RelationManager
         <strong>Pieces:</strong> ' . $pieces . '
     </div>
 
-    <div class="summary-cards">
-        <div class="summary-card">
-            <div class="item">
-                <h4>Total Cost</h4>
-                <div class="value">PKR ' . number_format($totalCost, 0) . '</div>
-            </div>
-            <div class="item">
-                <h4>Selling Price</h4>
-                <div class="value">PKR ' . number_format($sellingPrice, 0) . '</div>
-            </div>
-            <div class="item">
-                <h4>Profit Amount</h4>
-                <div class="value">PKR ' . number_format($profitAmount, 0) . '</div>
-            </div>
-            <div class="item">
-                <h4>Profit Margin</h4>
-                <div class="value">' . $profitPercentage . '%</div>
-            </div>
-        </div>
+    <div class="summary-table">
+        <table class="compact-table">
+            <thead>
+                <tr>
+                    <th>Total Cost</th>
+                    <th>Selling Price</th>
+                    <th>Profit Amount</th>
+                    <th>Profit Margin</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>PKR ' . number_format($totalCost, 0) . '</td>
+                    <td>PKR ' . number_format($sellingPrice, 0) . '</td>
+                    <td>PKR ' . number_format($profitAmount, 0) . '</td>
+                    <td>' . $profitPercentage . '%</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
+    
+
+   
     
     <div class="two-column">
         <div>

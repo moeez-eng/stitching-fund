@@ -21,6 +21,7 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'role',
         'status',
+        'agency_owner_id',
     ];
 
     protected $hidden = [
@@ -138,5 +139,15 @@ class User extends Authenticatable implements FilamentUser
         
         // Agency Owners and Regular users can't delete anyone
         return false;
+    }
+    
+    public function agencyOwner()
+    {
+        return $this->belongsTo(User::class, 'agency_owner_id');
+    }
+
+    public function investors()
+    {
+        return $this->hasMany(User::class, 'agency_owner_id');
     }
 }

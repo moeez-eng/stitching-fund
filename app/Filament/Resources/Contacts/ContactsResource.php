@@ -25,6 +25,18 @@ class ContactsResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'contact';
 
+    public static function canViewAny(): bool
+    {
+        $user = Auth::user();
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = Auth::user();
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ContactsForm::configure($schema);
@@ -51,11 +63,6 @@ class ContactsResource extends Resource
         ];
     }
 
-    public static function canViewAny(): bool
-    {
-        return Contact::userCanViewContacts();
-    }
-    
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return parent::getEloquentQuery()->forUser();

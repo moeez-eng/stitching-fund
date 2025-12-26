@@ -53,10 +53,52 @@ class InvestmentPoolResource extends Resource
         ];
     }
 
+    public static function canViewAny(): bool
+    {
+        $user = Auth::user();
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner', 'Investor']);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = Auth::user();
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner', 'Investor']);
+    }
+
     public static function getEloquentQuery(): Builder
     {
-        // Temporarily remove user filter to test if data shows
-        return parent::getEloquentQuery();
+        $query = parent::getEloquentQuery();
+        $user = Auth::user();
+        
+        if (!$user) {
+            return $query->whereRaw('1 = 0');
+        }
+        
+        // Super Admin sees all
+        if ($user->role === 'Super Admin') {
+            return $query;
+        }
+        
+        // Agency Owner sees their own investment pools
+        if ($user->role === 'Agency Owner') {
+            return $query->where('user_id', $user->id);
+        }
+        
+        // Investor sees investment pools from their referenced agency owner
+        if ($user->role === 'Investor') {
+            // Get the agency owner for this investor
+            $agencyOwnerId = $user->agency_owner_id;
+            
+            if ($agencyOwnerId) {
+                // Show investment pools belonging to the investor's agency owner
+                return $query->where('user_id', $agencyOwnerId);
+            }
+            
+            // If no agency owner assigned, show nothing
+            return $query->whereRaw('1 = 0');
+        }
+        
+        return $query->whereRaw('1 = 0');
     }
 
     protected static function mutateFormDataBeforeSave(array $data): array

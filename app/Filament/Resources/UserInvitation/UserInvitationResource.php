@@ -26,6 +26,18 @@ use Filament\Schemas\Components\Section;
 
 class UserInvitationResource extends Resource
 {
+    public static function canViewAny(): bool
+    {
+        $user = Auth::user();
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = Auth::user();
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
+    }
+
     protected static ?string $model = UserInvitation::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Envelope;
@@ -36,12 +48,7 @@ class UserInvitationResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Investor Invitations';
 
-    public static function canViewAny(): bool
-    {
-        // Hide from Investor role - only show to other roles
-        return Auth::user()?->role !== 'Investor';
-    }
-
+    
     public static function canCreate(): bool
     {
         // Only allow non-Investor roles to create invitations

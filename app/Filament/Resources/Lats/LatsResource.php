@@ -27,6 +27,18 @@ class LatsResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    public static function canViewAny(): bool
+    {
+        $user = Auth::user();
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = Auth::user();
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
+    }
+
     protected static ?string $navigationLabel = 'Lats';
     protected static ?string $modelLabel = 'Lat';
     protected static ?string $pluralModelLabel = 'Lats';
@@ -68,12 +80,7 @@ class LatsResource extends Resource
         ];
     }
 
-   public static function canViewAny(): bool
-{
-    return Lat::userCanViewLats(); // Any logged-in user can view lats
-}
-
- public static function getEloquentQuery(): Builder
+     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->forUser();
     }

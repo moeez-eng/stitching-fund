@@ -14,6 +14,7 @@ use Filament\Forms\Components\TextInput;
 class Register extends BaseRegister
 {
     protected ?UserInvitation $invitation = null;
+    protected ?array $invitationData = null;
 
     public function mount(): void
     {
@@ -26,20 +27,65 @@ class Register extends BaseRegister
             Log::info('Mount method - Invitation code found:', ['invitationCode' => $invitationCode]);
 
             $this->invitation = UserInvitation::where('unique_code', $invitationCode)
-                ->whereNull('accepted_at')
                 ->where('expires_at', '>', now())
+                ->whereNull('accepted_at')
                 ->first();
 
             Log::info('Mount method - Invitation query result:', ['invitation' => $this->invitation]);
             
+            // Check if invitation exists but is already accepted or invalid
+            if ($invitationCode && !$this->invitation) {
+                $existingInvitation = UserInvitation::where('unique_code', $invitationCode)->first();
+                
+                if ($existingInvitation) {
+                    if ($existingInvitation->accepted_at) {
+                        // Invitation already used
+                        \Filament\Notifications\Notification::make()
+                            ->title('Invitation Already Used')
+                            ->body('This invitation link has already been used to register an account.')
+                            ->danger()
+                            ->send();
+                    } else {
+                        // Invitation expired (clicked but not accepted)
+                        \Filament\Notifications\Notification::make()
+                            ->title('Invitation Expired')
+                            ->body('This invitation link has already been used. Please contact your agency owner for a new invitation.')
+                            ->danger()
+                            ->send();
+                    }
+                } else {
+                    // Invalid invitation code
+                    \Filament\Notifications\Notification::make()
+                        ->title('Invalid Invitation')
+                        ->body('This invitation link is not valid.')
+                        ->danger()
+                        ->send();
+                }
+                
+                // Redirect to regular registration
+                $this->redirect(route('filament.admin.auth.register'));
+                return;
+            }
+            
             if ($this->invitation) {
-                // Store invitation data in session to persist between method calls
-                session(['invitation_data' => $this->invitation]);
+                // Store invitation data before deletion
+                $this->invitationData = $this->invitation->toArray();
+                
+                // Delete invitation immediately (one-time use)
+                $this->invitation->delete();
+                
+                // Set invitation to null since it's deleted
+                $this->invitation = null;
                 
                 // Pre-fill form data with invitation details
                 $this->form->fill([
-                    'email' => $this->invitation->email,
+                    'email' => $this->invitationData['email'],
                     'role' => 'Investor'
+                ]);
+                
+                Log::info('Invitation deleted:', [
+                    'invitation_id' => $this->invitationData['id'],
+                    'email' => $this->invitationData['email']
                 ]);
             }
         } else {
@@ -96,9 +142,9 @@ class Register extends BaseRegister
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Ensure role is set correctly based on invitation
-        if ($this->invitation) {
+        if ($this->invitationData) {
             $data['role'] = 'Investor';
-            $data['email'] = $this->invitation->email;
+            $data['email'] = $this->invitationData['email'];
         } else {
             $data['role'] = 'Agency Owner';
         }
@@ -113,24 +159,5 @@ class Register extends BaseRegister
         Log::info('Registration data before create:', $data);
         
         return $data;
-    }
-
-    protected function handleRegistration(array $data): \Illuminate\Database\Eloquent\Model
-    {
-        $user = parent::handleRegistration($data);
-        
-        // Mark invitation as accepted if it exists
-        if ($this->invitation) {
-            $this->invitation->update([
-                'accepted_at' => now(),
-            ]);
-            
-            Log::info('Invitation accepted:', [
-                'invitation_id' => $this->invitation->id,
-                'user_id' => $user->id
-            ]);
-        }
-        
-        return $user;
     }
 }

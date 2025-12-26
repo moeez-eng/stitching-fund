@@ -184,7 +184,7 @@ class UserInvitationResource extends Resource
                             Log::error('Failed to resend invitation email: ' . $e->getMessage());
                         }
                     })
-                    ->visible(fn(UserInvitation $record) => $record->isValid()),
+                    ->visible(fn(?UserInvitation $record) => $record?->isValid() ?? false),
 
                 EditAction::make(),
                 DeleteAction::make(),

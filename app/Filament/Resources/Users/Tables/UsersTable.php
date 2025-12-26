@@ -83,7 +83,7 @@ class UsersTable
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make()
-                    ->visible(fn ($record) => $record->role !== 'Super Admin'),
+                    ->visible(fn ($record) => $record?->role !== 'Super Admin'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

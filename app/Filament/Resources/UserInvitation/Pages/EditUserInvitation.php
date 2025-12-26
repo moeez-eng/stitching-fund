@@ -13,7 +13,8 @@ class EditUserInvitation extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->visible(fn ($record) => $record !== null),
         ];
     }
 

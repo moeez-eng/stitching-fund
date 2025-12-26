@@ -14,7 +14,7 @@ class EditUsers extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
-                ->visible(fn ($record) => $record->role !== 'Super Admin'),
+                ->visible(fn ($record) => $record?->role !== 'Super Admin'),
         ];
     }
 }

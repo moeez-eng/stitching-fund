@@ -14,7 +14,7 @@
             padding: 20px;
         }
         .header {
-            background: #6366f1;
+            background: #AD46FF;
             color: white;
             padding: 20px;
             text-align: center;
@@ -28,13 +28,14 @@
         }
         .button {
             display: inline-block;
-            background: #6366f1;
-            color: white;
+            background: #AD46FF;
+            color: #ffffff;
             padding: 12px 24px;
             text-decoration: none;
             border-radius: 6px;
             margin: 20px 0;
         }
+        
         .footer {
             text-align: center;
             margin-top: 20px;
@@ -58,10 +59,11 @@
             <p>Click the button below to accept the invitation and complete your registration:</p>
             
             <p style="text-align: center;">
-                <a href="{{ $registerUrl }}" class="button">Accept Invitation</a>
+                <a href="{{ $registerUrl }}" class="button" style="display: inline-block; background: #AD46FF; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">Accept Invitation</a>
             </p>
-            
-            <p><small>This invitation will expire on: {{ $invitation->expires_at->format('F j, Y') }}</small></p>
+            <p>Importance of this invitation</p>
+            <p><small>This invitation will expire on: {{ $invitation->expires_at->format('F j, Y') }}</small><br>
+            and this is one time invitation</p>
             
             <p>If you didn't expect this invitation, you can safely ignore this email.</p>
         </div>

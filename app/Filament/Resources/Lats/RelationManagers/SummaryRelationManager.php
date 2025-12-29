@@ -127,10 +127,11 @@ class SummaryRelationManager extends RelationManager
                         
                         if ($isPaymentStatus) {
                             $statusColor = match($state) {
-                                'pending' => 'bg-red-100 text-red-800',
-                                'partial' => 'bg-yellow-100 text-yellow-800', 
-                                'complete' => 'bg-green-100 text-green-800',
-                                default => 'bg-gray-100 text-gray-800'
+                                'pending' => 'bg-red-100 text-red-800 border-red-200',
+                                'partial' => 'bg-yellow-100 text-yellow-800 border-yellow-200', 
+                                'complete' => 'bg-green-100 text-green-800 border-green-200',
+                                'lose' => 'bg-gray-100 text-gray-800 border-gray-200',
+                                default => 'bg-gray-100 text-gray-800 border-gray-200'
                             };
                             $statusText = ucfirst($state);
                             return new HtmlString("
@@ -210,11 +211,16 @@ class SummaryRelationManager extends RelationManager
                             ->minValue(0),
                     ])
                     ->action(function (array $data) use ($lat) {
+                        // Ensure numeric fields are properly handled
+                        $marketPaymentsReceived = is_numeric($data['market_payments_received']) 
+                            ? (float) $data['market_payments_received'] 
+                            : 0;
+                        
                         $lat->update([
                             'pieces' => $data['pieces'],
                             'profit_percentage' => $data['profit_percentage'],
                             'payment_status' => $data['payment_status'],
-                            'market_payments_received' => $data['market_payments_received'],
+                            'market_payments_received' => $marketPaymentsReceived,
                         ]);
 
                         Notification::make()
@@ -223,8 +229,8 @@ class SummaryRelationManager extends RelationManager
                             ->body('Your financial calculations have been updated.')
                             ->send();
                         
-                        // Refresh the relation manager data
-                        $this->dispatch('refreshComponent');
+                        // Refresh the entire page to show updated data
+                        $this->redirect('/lats', navigate: true);
                     }),
 
                 Action::make('download_report')
@@ -275,6 +281,12 @@ class SummaryRelationManager extends RelationManager
         $profitAmount = ($totalCost * $profitPercentage) / 100;
         $sellingPrice = $totalCost + $profitAmount;
         $pieces = $lat->pieces ?? 1;
+        
+        // Payment tracking
+        $marketPaymentsReceived = $lat->market_payments_received ?? 0;
+        $paymentStatus = $lat->payment_status ?? 'pending';
+        $paymentPercentage = $sellingPrice > 0 ? round(($marketPaymentsReceived / $sellingPrice) * 100, 1) : 0;
+        $balanceRemaining = $sellingPrice - $marketPaymentsReceived;
 
         // Generate HTML content with compact layout
         $html = '<!DOCTYPE html>
@@ -517,6 +529,34 @@ class SummaryRelationManager extends RelationManager
             </table>
         </div>
     </div>
+
+    <div class="section-title">Payment Status</div>
+    <table class="compact-table">
+        <thead>
+            <tr>
+                <th>Payment Item</th>
+                <th>Amount (PKR)</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Market Payments Received</td>
+                <td>' . number_format($marketPaymentsReceived, 0) . '</td>
+                <td>' . ucfirst($paymentStatus) . '</td>
+            </tr>
+            <tr>
+                <td>Payment Percentage</td>
+                <td>' . $paymentPercentage . '%</td>
+                <td>Of total price</td>
+            </tr>
+            <tr class="total">
+                <td><strong>Balance Remaining</strong></td>
+                <td><strong>PKR ' . number_format($balanceRemaining, 0) . '</strong></td>
+                <td><strong>Amount due</strong></td>
+            </tr>
+        </tbody>
+    </table>
 
     <div class="section-title">Financial Summary</div>
     <table class="compact-table">

@@ -20,6 +20,13 @@ class Lat extends Model
             if (Auth::check() && !$lat->user_id) {
                 $lat->user_id = Auth::id();
             }
+            
+            // Set default values for financial fields if not provided
+            $lat->market_payments_received = $lat->market_payments_received ?? 0;
+            $lat->payment_status = $lat->payment_status ?? 'pending';
+            $lat->total_with_profit = $lat->total_with_profit ?? 0;
+            $lat->profit_percentage = $lat->profit_percentage ?? 10;
+            $lat->pieces = $lat->pieces ?? 1;
         });
     }
 
@@ -36,6 +43,15 @@ class Lat extends Model
         'market_payments_received',
         'payment_status',
         'total_with_profit',
+    ];
+
+    protected $casts = [
+        'total_price' => 'decimal:2',
+        'pieces' => 'integer',
+        'profit_percentage' => 'decimal:2',
+        'initial_investment' => 'decimal:2',
+        'market_payments_received' => 'decimal:2',
+        'total_with_profit' => 'decimal:2',
     ];
 
     public function user()

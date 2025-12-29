@@ -33,6 +33,9 @@ class Lat extends Model
         'initial_investment',
         'company_name',
         'user_id',
+        'market_payments_received',
+        'payment_status',
+        'total_with_profit',
     ];
 
     public function user()

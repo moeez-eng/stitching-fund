@@ -11,12 +11,11 @@ use Filament\Resources\Resource;
 use Illuminate\Support\Facades\Log;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
-// use Filament\Resources\Pages\ViewRecord;
 use App\Models\Scopes\AgencyOwnerScope;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\Lats\Pages\EditLats;
 use App\Filament\Resources\Lats\Pages\ListLats;
-use App\Filament\Resources\Lats\Pages\CreateLats;
+use App\Filament\Resources\Lats\Pages\CreateLats;     
 use App\Filament\Resources\Lats\Pages\LatDetails;
 use App\Filament\Resources\Lats\Schemas\LatsForm;
 use App\Filament\Resources\Lats\Tables\LatsTable;
@@ -39,10 +38,10 @@ class LatsResource extends Resource
         return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
     }
 
-    protected static ?string $navigationLabel = 'Lats';
-    protected static ?string $modelLabel = 'Lat';
-    protected static ?string $pluralModelLabel = 'Lats';
-    protected static ?string $recordTitleAttribute = 'lat_no';
+    protected static ?string $navigationLabel = 'Lots';
+    protected static ?string $modelLabel = 'Lot';
+    protected static ?string $pluralModelLabel = 'Lots';
+    protected static ?string $recordTitleAttribute = 'lot_no';
 
     public static function form(Schema $schema): Schema
     {
@@ -92,6 +91,7 @@ class LatsResource extends Resource
             RelationManagers\MaterialsRelationManager::class,
             RelationManagers\ExpenseRelationManager::class,
             RelationManagers\SummaryRelationManager::class,
+            // RelationManagers\PaymentsRelationManager::class,
         ];
     }
    

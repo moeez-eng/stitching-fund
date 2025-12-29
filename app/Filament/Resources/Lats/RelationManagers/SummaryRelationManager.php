@@ -40,6 +40,12 @@ class SummaryRelationManager extends RelationManager
         $sellingPricePerPiece = $pieces > 0 ? $sellingPrice / $pieces : 0;
         $profitPerPiece = $pieces > 0 ? $profitAmount / $pieces : 0;
 
+        // Payment tracking
+        $marketPaymentsReceived = $lat->market_payments_received ?? 0;
+        $paymentStatus = $lat->payment_status ?? 'pending';
+        $paymentPercentage = $sellingPrice > 0 ? round(($marketPaymentsReceived / $sellingPrice) * 100, 1) : 0;
+        $balanceRemaining = $sellingPrice - $marketPaymentsReceived;
+
         // Organized summary data with sections
         $summaryData = [
             // COST BREAKDOWN SECTION
@@ -53,6 +59,13 @@ class SummaryRelationManager extends RelationManager
             ['type' => 'Profit Margin', 'amount' => $profitPercentage, 'is_percentage' => true, 'is_header' => false, 'description' => 'Target profit percentage', 'icon' => 'heroicon-o-chart-bar'],
             ['type' => 'Profit Amount', 'amount' => $profitAmount, 'is_header' => false, 'description' => 'Total profit earned', 'icon' => 'heroicon-o-currency-dollar'],
             ['type' => 'Final Selling Price', 'amount' => $sellingPrice, 'is_header' => false, 'is_bold' => true, 'description' => 'Total revenue from sales', 'icon' => 'heroicon-o-tag'],
+
+            // PAYMENT STATUS SECTION
+            ['type' => 'PAYMENT STATUS', 'amount' => null, 'is_header' => true, 'icon' => null],
+            ['type' => 'Market Payments Received', 'amount' => $marketPaymentsReceived, 'is_header' => false, 'description' => 'Amount received from customer', 'icon' => 'heroicon-o-banknotes'],
+            ['type' => 'Payment Status', 'amount' => $paymentStatus, 'is_payment_status' => true, 'is_header' => false, 'description' => 'Current payment status', 'icon' => 'heroicon-o-clipboard-document-check'],
+            ['type' => 'Payment Percentage', 'amount' => $paymentPercentage, 'is_percentage' => true, 'is_header' => false, 'description' => 'Percentage of total price paid', 'icon' => 'heroicon-o-chart-pie'],
+            ['type' => 'Balance Remaining', 'amount' => $balanceRemaining, 'is_header' => false, 'is_bold' => true, 'description' => 'Amount still to be received', 'icon' => 'heroicon-o-exclamation-triangle'],
 
             // PER UNIT BREAKDOWN
             ['type' => 'PER PIECE BREAKDOWN', 'amount' => null, 'is_header' => true, 'icon' => null],
@@ -105,7 +118,27 @@ class SummaryRelationManager extends RelationManager
 
                         // Check for percentage more robustly
                         $isPercentage = ($record->is_percentage ?? false) || 
-                                       (strpos($record->type ?? '', 'Profit Margin') !== false);
+                                       (strpos($record->type ?? '', 'Profit Margin') !== false) ||
+                                       (strpos($record->type ?? '', 'Payment Percentage') !== false);
+                        
+                        // Check for payment status
+                        $isPaymentStatus = ($record->is_payment_status ?? false) || 
+                                          (strpos($record->type ?? '', 'Payment Status') !== false);
+                        
+                        if ($isPaymentStatus) {
+                            $statusColor = match($state) {
+                                'pending' => 'bg-red-100 text-red-800',
+                                'partial' => 'bg-yellow-100 text-yellow-800', 
+                                'complete' => 'bg-green-100 text-green-800',
+                                default => 'bg-gray-100 text-gray-800'
+                            };
+                            $statusText = ucfirst($state);
+                            return new HtmlString("
+                                <span class='inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold {$statusColor}'>
+                                    {$statusText}
+                                </span>
+                            ");
+                        }
                         
                         if ($isPercentage) {
                             return new HtmlString("
@@ -153,23 +186,35 @@ class SummaryRelationManager extends RelationManager
                             ->label('Profit Margin (%)')
                             ->helperText('How much profit do you want to make?')
                             ->numeric()
-                            // ->options([
-                            //     // '5' => '5% - Low margin (competitive pricing)',
-                            //     // '10' => '10% - Standard margin',
-                            //     // '15' => '15% - Good margin',
-                            //     // '20' => '20% - High margin (recommended)',
-                            //     // '25' => '25% - Premium margin',
-                            //     // '30' => '30% - Luxury margin',
-                            //     // '40' => '40% - Very high margin',
-                            //     // '50' => '50% - Maximum margin',
-                            // ])
                             ->default($lat->profit_percentage ?? 20)
                             ->required(),
+
+                        Select::make('payment_status')
+                            ->label('Payment Status')
+                            ->helperText('Current payment status')
+                            ->options([
+                                'pending' => 'Pending',
+                                'partial' => 'Partial',
+                                'complete' => 'Complete',
+                                'lose' => 'Lose',
+                            ])
+                            ->default($lat->payment_status ?? 'pending')
+                            ->required(),
+
+                        TextInput::make('market_payments_received')
+                            ->label('Market Payments Received')
+                            ->helperText('Amount received from customer')
+                            ->numeric()
+                            ->prefix('PKR')
+                            ->default($lat->market_payments_received ?? 0)
+                            ->minValue(0),
                     ])
                     ->action(function (array $data) use ($lat) {
                         $lat->update([
                             'pieces' => $data['pieces'],
                             'profit_percentage' => $data['profit_percentage'],
+                            'payment_status' => $data['payment_status'],
+                            'market_payments_received' => $data['market_payments_received'],
                         ]);
 
                         Notification::make()
@@ -177,6 +222,9 @@ class SummaryRelationManager extends RelationManager
                             ->success()
                             ->body('Your financial calculations have been updated.')
                             ->send();
+                        
+                        // Refresh the relation manager data
+                        $this->dispatch('refreshComponent');
                     }),
 
                 Action::make('download_report')

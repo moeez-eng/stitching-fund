@@ -59,7 +59,8 @@
             <p>Click the button below to accept the invitation and complete your registration:</p>
             
             <p style="text-align: center;">
-                <a href="{{ $registerUrl }}" class="button" style="display: inline-block; background: #AD46FF; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">Accept Invitation</a>
+                <a href="{{ $registerUrl }}" class="button"
+                 style="display: inline-block; background: #AD46FF; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">Accept Invitation</a>
             </p>
             <p>Importance of this invitation</p>
             <p><small>This invitation will expire on: {{ $invitation->expires_at->format('F j, Y') }}</small><br>

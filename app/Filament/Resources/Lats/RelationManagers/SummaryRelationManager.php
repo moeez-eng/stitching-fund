@@ -149,19 +149,20 @@ class SummaryRelationManager extends RelationManager
                             ->minValue(1)
                             ->required(),
 
-                        Select::make('profit_percentage')
+                        TextInput::make('profit_percentage')
                             ->label('Profit Margin (%)')
                             ->helperText('How much profit do you want to make?')
-                            ->options([
-                                '5' => '5% - Low margin (competitive pricing)',
-                                '10' => '10% - Standard margin',
-                                '15' => '15% - Good margin',
-                                '20' => '20% - High margin (recommended)',
-                                '25' => '25% - Premium margin',
-                                '30' => '30% - Luxury margin',
-                                '40' => '40% - Very high margin',
-                                '50' => '50% - Maximum margin',
-                            ])
+                            ->numeric()
+                            // ->options([
+                            //     // '5' => '5% - Low margin (competitive pricing)',
+                            //     // '10' => '10% - Standard margin',
+                            //     // '15' => '15% - Good margin',
+                            //     // '20' => '20% - High margin (recommended)',
+                            //     // '25' => '25% - Premium margin',
+                            //     // '30' => '30% - Luxury margin',
+                            //     // '40' => '40% - Very high margin',
+                            //     // '50' => '50% - Maximum margin',
+                            // ])
                             ->default($lat->profit_percentage ?? 20)
                             ->required(),
                     ])

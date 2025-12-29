@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('wallets', function (Blueprint $table) {
             $table->id();
             $table->foreignId('agency_owner_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('investor_id')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->foreignId('investor_id')->constrained('users')->cascadeOnDelete();
             $table->decimal('amount', 15, 2)->default(0);
             $table->string('slip_type')->nullable();
             $table->string('slip_path')->nullable();

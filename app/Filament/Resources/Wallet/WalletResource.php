@@ -26,7 +26,7 @@ class WalletResource extends Resource
     protected static ?string $model = Wallet::class;
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-wallet';
     
-    protected static ?string $navigationGroup = 'Investment Management';
+    protected static string|UnitEnum|null $navigationGroup = 'Investment Management';
 
     public static function form(Schema $schema): Schema
     {
@@ -41,13 +41,13 @@ class WalletResource extends Resource
     public static function canViewAny(): bool
     {
          $user = Auth::user();
-        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner', 'Investor']);
     }
 
     public static function shouldRegisterNavigation(): bool
     {
         $user = Auth::user();
-        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner', 'Investor']);
     }
 
     public static function getRelations(): array
@@ -69,15 +69,26 @@ class WalletResource extends Resource
         $query = parent::getEloquentQuery();
         $user = Auth::user();
         
+        if (!$user) {
+            return $query->whereRaw('1 = 0');
+        }
+        
+        // Super Admin sees all
+        if ($user->role === 'Super Admin') {
+            return $query;
+        }
+        
+        // Agency Owner sees all wallets from their agency
         if ($user->role === 'Agency Owner') {
             return $query->where('agency_owner_id', $user->id);
         }
         
+        // Investor sees only their own wallets
         if ($user->role === 'Investor') {
             return $query->where('investor_id', $user->id);
         }
         
-        return $query;
+        return $query->whereRaw('1 = 0');
     }
     
     public static function canCreate(): bool
@@ -85,5 +96,51 @@ class WalletResource extends Resource
         return Auth::user()->role === 'Agency Owner';
     }
     
+    public static function canEdit($record): bool
+    {
+        $user = Auth::user();
+        if (!$user || !$record) return false;
+        
+        // Super Admin can edit all
+        if ($user->role === 'Super Admin') return true;
+        
+        // Agency Owner can edit wallets from their agency
+        if ($user->role === 'Agency Owner' && $record->agency_owner_id === $user->id) return true;
+        
+        // Investors cannot edit
+        return false;
+    }
+    
+    public static function canDelete($record): bool
+    {
+        $user = Auth::user();
+        if (!$user || !$record) return false;
+        
+        // Super Admin can delete all
+        if ($user->role === 'Super Admin') return true;
+        
+        // Agency Owner can delete wallets from their agency
+        if ($user->role === 'Agency Owner' && $record->agency_owner_id === $user->id) return true;
+        
+        // Investors cannot delete
+        return false;
+    }
+    
+    public static function canView($record): bool
+    {
+        $user = Auth::user();
+        if (!$user || !$record) return false;
+        
+        // Super Admin can view all
+        if ($user->role === 'Super Admin') return true;
+        
+        // Agency Owner can view wallets from their agency
+        if ($user->role === 'Agency Owner' && $record->agency_owner_id === $user->id) return true;
+        
+        // Investor can view their own wallets
+        if ($user->role === 'Investor' && $record->investor_id === $user->id) return true;
+        
+        return false;
+    }
    
 }

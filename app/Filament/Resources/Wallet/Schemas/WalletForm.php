@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Wallet\Forms;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class WalletForm
 {
@@ -13,13 +14,20 @@ class WalletForm
         return [
             Forms\Components\Select::make('investor_id')
                 ->label('Investor')
-                ->options(fn () => User::where('role', 'Investor')->pluck('name', 'id'))
+                ->options(function () {
+                    $user = Auth::user();
+                    if ($user->role === 'Super Admin') {
+                        return User::where('role', 'Investor')->pluck('name', 'id');
+                    } elseif ($user->role === 'Agency Owner') {
+                        return User::where('role', 'Investor')->where('agency_owner_id', $user->id)->pluck('name', 'id');
+                    }
+                    return [];
+                })
                 ->required()
                 ->searchable(),
             Forms\Components\TextInput::make('amount')
                 ->numeric()
-                ->required()
-                ->prefix('$'),
+                ->required(),
             Forms\Components\Select::make('slip_type')
                 ->options([
                     'bank_transfer' => 'Bank Transfer',
@@ -31,14 +39,12 @@ class WalletForm
                 ->label('Deposit Slip')
                 ->directory('wallet-slips')
                 ->downloadable()
-                ->openable()
-                ->required(),
+                ->openable(),
             Forms\Components\TextInput::make('reference')
                 ->label('Reference/Check #')
                 ->maxLength(255),
             Forms\Components\DatePicker::make('deposited_at')
                 ->label('Deposit Date')
-                ->required()
                 ->default(now()),
         ];
     }

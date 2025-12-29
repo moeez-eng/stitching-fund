@@ -5,10 +5,11 @@ namespace App\Providers\Filament;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\Widgets;
-use Filament\Widgets\StatsOverviewWidget;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use App\Filament\Pages\Auth\Register;
+use App\Http\Middleware\CheckUserStatus;
+use Filament\Widgets\StatsOverviewWidget;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Routing\Middleware\SubstituteBindings;
@@ -19,7 +20,6 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Filament\Http\Middleware\Authenticate as FilamentAuthenticate;
-use App\Http\Middleware\CheckUserStatus;
 
 class AdminPanelProvider extends PanelProvider
 {

@@ -1,23 +1,27 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Filament\Register\Pages\RegisterPage;
 
-Route::get('/test', function () {
-    return 'Simple test route is working!';
-});
+
 
 Route::get('/', function () {
-    return redirect('/admin');
+    return view('welcome');
 })->name('home');
+
+// Route to admin landing page
+Route::get('/admin', function () {
+    if (Auth::check()) {
+        return redirect('/admin/dashboard');
+    }
+    return redirect('/admin/dashboard');
+})->name('admin.home');
 
 // Add login route alias for Filament
 Route::get('/login', function () {
     return redirect('/admin/login');
 })->name('login');
-
-// Route::get('/accept-invitation/{companySlug}/{uniqueCode}', [App\Http\Controllers\InvitationController::class, 'accept'])->name('accept.invitation');
-// Route::post('/accept-invitation/{companySlug}/{uniqueCode}', [App\Http\Controllers\InvitationController::class, 'store'])->name('accept.invitation.store');
 

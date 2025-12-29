@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="<?php echo e(str_replace('_', '-', app()->getLocale())); ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,18 +25,18 @@
                     <h1 class="text-2xl font-bold text-purple-600">Lotrix</h1>
                 </div>
                 <div class="flex items-center space-x-4">
-                    @auth
-                        <a href="{{ url('/admin/dashboard') }}" class="text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->guard()->check()): ?>
+                        <a href="<?php echo e(url('/admin/dashboard')); ?>" class="text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">
                             Dashboard
                         </a>
-                    @else
-                        <a href="{{ route('login') }}" class="text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">
+                    <?php else: ?>
+                        <a href="<?php echo e(route('login')); ?>" class="text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">
                             Login
                         </a>
-                        <a href="{{ route('filament.admin.auth.register') }}" class="bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700">
+                        <a href="<?php echo e(route('filament.admin.auth.register')); ?>" class="bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700">
                             Get Started
                         </a>
-                    @endauth
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </div>
             </div>
         </div>
@@ -60,10 +60,10 @@
                 Streamline your manufacturing business with real-time cost tracking, profit calculations, and production management.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ route('filament.admin.auth.register') }}" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
+                <a href="<?php echo e(route('filament.admin.auth.register')); ?>" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
                     Start Free Trial
                 </a>
-                <a href="{{ route('login') }}" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition">
+                <a href="<?php echo e(route('login')); ?>" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition">
                     Login to Dashboard
                 </a>
             </div>
@@ -255,7 +255,7 @@
             <p class="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
                 Join thousands of businesses using Lotrix to manage their production efficiently.
             </p>
-            <a href="{{ route('filament.admin.auth.register') }}" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
+            <a href="<?php echo e(route('filament.admin.auth.register')); ?>" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
                 Get Started Today
             </a>
         </div>
@@ -270,3 +270,4 @@
 
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\stitching-fund\resources\views/welcome.blade.php ENDPATH**/ ?>

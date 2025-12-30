@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Wallet;
 
-use BackedEnum;
 use UnitEnum;
+use BackedEnum;
 use App\Models\User;
 use Filament\Tables;
 use App\Models\Wallet;
@@ -24,7 +24,7 @@ use App\Filament\Resources\Wallet\Tables\WalletTable;
 class WalletResource extends Resource
 {
     protected static ?string $model = Wallet::class;
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-wallet';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-credit-card';
     
     protected static string|UnitEnum|null $navigationGroup = 'Investment Management';
 
@@ -62,6 +62,16 @@ class WalletResource extends Resource
             'create' => \App\Filament\Resources\Wallet\Pages\CreateWallet::route('/create'),
             'edit' => \App\Filament\Resources\Wallet\Pages\EditWallet::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Wallet';
+    }
+
+    public static function getNavigationIcon(): string
+    {
+        return 'heroicon-o-credit-card';
     }
 
     public static function getEloquentQuery(): Builder

@@ -47,4 +47,34 @@ class Wallet extends Model
     {
         return $this->belongsTo(User::class, 'agency_owner_id');
     }
+
+    public function allocations()
+    {
+        return $this->hasMany(WalletAllocation::class, 'investor_id', 'investor_id');
+    }
+
+    public function getAvailableBalanceAttribute()
+    {
+        $totalDeposited = $this->amount;
+        $totalAllocated = $this->allocations()->sum('amount');
+        return $totalDeposited - $totalAllocated;
+    }
+
+    public function getTotalInvestedAttribute()
+    {
+        return $this->allocations()->sum('amount');
+    }
+
+    public function getWalletStatusAttribute()
+    {
+        $balance = $this->available_balance;
+        
+        if ($balance == 0) {
+            return ['status' => 'empty', 'color' => 'danger', 'text' => 'Empty Wallet'];
+        } elseif ($balance < 50000) {
+            return ['status' => 'low', 'color' => 'warning', 'text' => 'Low Balance'];
+        } else {
+            return ['status' => 'healthy', 'color' => 'success', 'text' => 'Healthy Balance'];
+        }
+    }
 }

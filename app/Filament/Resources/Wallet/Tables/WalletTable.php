@@ -11,6 +11,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\HtmlString;
 
 class WalletTable
 {
@@ -22,71 +23,128 @@ class WalletTable
     public static function table(Table $table): Table
     {
         return $table
+            ->contentGrid(function () {
+                return [
+                    'md' => 2,
+                    'lg' => 3,
+                ];
+            })
             ->columns([
-                Tables\Columns\TextColumn::make('investor.name')
-                    ->label('Investor')
-                    ->searchable()
-                    ->sortable()
-                    ->badge()
-                    ->color('primary'),
+                Tables\Columns\TextColumn::make('wallet_card')
+                    ->label('')
+                    ->formatStateUsing(function (Wallet $record): string {
+                        $user = Auth::user();
+                        $availableBalance = $record->available_balance;
+                        $totalInvested = $record->total_invested;
+                        $walletStatus = $record->wallet_status;
+                        
+                        // Determine card color based on status
+                        $bgColor = match($walletStatus['status']) {
+                            'empty' => 'bg-gradient-to-br from-red-500 to-red-600',
+                            'low' => 'bg-gradient-to-br from-yellow-500 to-orange-500',
+                            'healthy' => 'bg-gradient-to-br from-green-500 to-emerald-600',
+                            default => 'bg-gradient-to-br from-blue-500 to-indigo-600'
+                        };
 
-                Tables\Columns\TextColumn::make('amount')
-                    ->label('Amount')
-                    ->money('PKR')
-                    ->sortable()
-                    ->weight('bold'),
+                        $cardHtml = '
+                            <div class="' . $bgColor . ' rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow duration-300">
+                                <!-- Header -->
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="text-xl font-bold mb-1">' . ($record->investor->name ?? 'Unknown Investor') . '</h3>
+                                        <p class="text-sm opacity-90">' . ($record->agencyOwner->name ?? 'Unknown Agency') . '</p>
+                                    </div>
+                                    <div class="bg-white/20 px-3 py-1 rounded-full text-xs font-semibold">
+                                        ' . ucfirst($walletStatus['status']) . '
+                                    </div>
+                                </div>
+                                
+                                <!-- Balance Display -->
+                                <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4">
+                                    <div class="text-sm opacity-90 mb-1">Available Balance</div>
+                                    <div class="text-3xl font-bold mb-1">PKR ' . number_format($availableBalance, 0) . '</div>
+                                    <div class="text-xs opacity-80">+12.5% this month</div>
+                                </div>
+                                
+                                <!-- Summary Stats -->
+                                <div class="grid grid-cols-3 gap-2 mb-4">
+                                    <div class="bg-white/10 rounded-lg p-2 text-center">
+                                        <div class="text-xs opacity-80">Deposited</div>
+                                        <div class="text-sm font-semibold">PKR ' . number_format($record->amount, 0) . '</div>
+                                    </div>
+                                    <div class="bg-white/10 rounded-lg p-2 text-center">
+                                        <div class="text-xs opacity-80">Invested</div>
+                                        <div class="text-sm font-semibold">PKR ' . number_format($totalInvested, 0) . '</div>
+                                    </div>
+                                    <div class="bg-white/10 rounded-lg p-2 text-center">
+                                        <div class="text-xs opacity-80">Available</div>
+                                        <div class="text-sm font-semibold">PKR ' . number_format($availableBalance, 0) . '</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Status Message -->';
 
-                Tables\Columns\TextColumn::make('slip_type')
-                    ->label('Payment Type')
-                    ->badge()
-                    ->color(fn (Wallet $record): string => 
-                        match($record->slip_type) {
-                            'bank_transfer' => 'success',
-                            'cash' => 'warning',
-                            'check' => 'info',
-                            default => 'gray'
+                        if ($availableBalance == 0) {
+                            $cardHtml .= '
+                                    <div class="bg-red-500/20 border border-red-400/30 rounded-lg p-2 text-center">
+                                        <div class="text-xs font-semibold">💼 Wallet Empty</div>
+                                        <div class="text-xs opacity-80 mt-1">No funds available for allocation</div>
+                                    </div>';
+                        } elseif ($availableBalance < 50000) {
+                            $cardHtml .= '
+                                    <div class="bg-yellow-500/20 border border-yellow-400/30 rounded-lg p-2 text-center">
+                                        <div class="text-xs font-semibold">⚠️ Low Balance</div>
+                                        <div class="text-xs opacity-80 mt-1">Consider adding more funds</div>
+                                    </div>';
+                        } else {
+                            $cardHtml .= '
+                                    <div class="bg-green-500/20 border border-green-400/30 rounded-lg p-2 text-center">
+                                        <div class="text-xs font-semibold">✅ Healthy Balance</div>
+                                        <div class="text-xs opacity-80 mt-1">Ready for investments</div>
+                                    </div>';
                         }
-                    )
-                    ->formatStateUsing(fn ($state) => 
-                        match($state) {
-                            'bank_transfer' => 'Bank Transfer',
-                            'cash' => 'Cash',
-                            'check' => 'Check',
-                            default => $state
-                        }
-                    ),
-
-                Tables\Columns\ImageColumn::make('slip_path')
-                    ->label('Deposit Slip')
-                    ->disk('public')
-                    ->circular()
-                    ->defaultImageUrl(url('/placeholder.png')),
-
-                Tables\Columns\TextColumn::make('reference')
-                    ->label('Reference')
-                    ->searchable()
-                    ->toggleable()
-                    ->copyable()
-                    ->copyMessage('Reference copied!')
-                    ->copyMessageDuration(1500),
-
-                Tables\Columns\TextColumn::make('deposited_at')
-                    ->label('Deposit Date')
-                    ->date()
-                    ->sortable()
-                    ->color('success'),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Created')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                        
+                        $cardHtml .= '
+                                
+                                <!-- Footer Info -->
+                                <div class="flex justify-between items-center mt-4 pt-4 border-t border-white/20">
+                                    <div class="text-xs opacity-80">
+                                        Last deposit: ' . $record->deposited_at->format('M d, Y') . '
+                                    </div>
+                                    <div class="text-xs opacity-80">
+                                        ' . ($record->slip_type ? ucfirst(str_replace('_', ' ', $record->slip_type)) : 'Bank Transfer') . '
+                                    </div>
+                                </div>
+                            </div>';
+                        
+                        return new HtmlString($cardHtml);
+                    })
+                    ->searchable(false)
+                    ->sortable(false),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('wallet_status')
+                    ->label('Wallet Status')
+                    ->options([
+                        'healthy' => 'Healthy Balance',
+                        'low' => 'Low Balance', 
+                        'empty' => 'Empty Wallet',
+                    ])
+                    ->query(function ($query, $data) {
+                        if ($data['value'] === 'healthy') {
+                            return $query->whereRaw('(amount - (SELECT COALESCE(SUM(amount), 0) FROM wallet_allocations WHERE investor_id = wallets.investor_id)) >= 50000');
+                        } elseif ($data['value'] === 'low') {
+                            return $query->whereRaw('(amount - (SELECT COALESCE(SUM(amount), 0) FROM wallet_allocations WHERE investor_id = wallets.investor_id)) > 0 AND (amount - (SELECT COALESCE(SUM(amount), 0) FROM wallet_allocations WHERE investor_id = wallets.investor_id)) < 50000');
+                        } elseif ($data['value'] === 'empty') {
+                            return $query->whereRaw('(amount - (SELECT COALESCE(SUM(amount), 0) FROM wallet_allocations WHERE investor_id = wallets.investor_id)) = 0');
+                        }
+                    }),
+
                 Tables\Filters\SelectFilter::make('investor_id')
                     ->label('Investor')
                     ->relationship('investor', 'name')
-                    ->searchable(),
+                    ->searchable()
+                    ->visible(fn () => Auth::user()?->role !== 'Investor'),
 
                 Tables\Filters\SelectFilter::make('slip_type')
                     ->label('Payment Type')
@@ -105,10 +163,16 @@ class WalletTable
                     ->query(fn ($query) => $query->whereBetween('deposited_at', [now()->startOfWeek(), now()->endOfWeek()])),
             ])
             ->actions([
-                ViewAction::make(),
+                ViewAction::make()
+                    ->label('View Details')
+                    ->icon('heroicon-o-eye'),
                 EditAction::make()
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil')
                     ->visible(fn () => Auth::user()?->role !== 'Investor'),
                 DeleteAction::make()
+                    ->label('Delete')
+                    ->icon('heroicon-o-trash')
                     ->visible(fn () => Auth::user()?->role !== 'Investor'),
             ])
             ->bulkActions([
@@ -124,6 +188,6 @@ class WalletTable
             ])
             ->emptyStateHeading('No wallet deposits found')
             ->emptyStateDescription('Create your first wallet deposit to get started.')
-            ->emptyStateIcon('heroicon-o-wallet');
+            ->emptyStateIcon('heroicon-o-credit-card');
     }
 }

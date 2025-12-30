@@ -18,7 +18,9 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Filament\Resources\RelationManagers\RelationManager;
+use App\Models\User;
 use App\Models\Lat;
+use App\Models\WalletAllocation;
 use App\Filament\Resources\InvestmentPool\Tables\InvestmentPoolTable;
 
 class InvestmentPoolRelationManager extends RelationManager
@@ -73,9 +75,16 @@ class InvestmentPoolRelationManager extends RelationManager
                                 Repeater::make('partners')
                                     ->label('Partners')
                                     ->schema([
-                                        TextInput::make('name')
+                                        Select::make('name')
                                             ->label('Partner Name')
-                                            ->required(),
+                                            ->required()
+                                            ->options(function () {
+                                                return User::where('role', 'Investor')
+                                                    ->where('id', '!=', Auth::id())
+                                                    ->pluck('name', 'name')
+                                                    ->toArray();
+                                            })
+                                            ->searchable(),
 
                                         TextInput::make('investment_amount')
                                             ->label('Investment Amount')
@@ -147,9 +156,16 @@ class InvestmentPoolRelationManager extends RelationManager
                                 Repeater::make('partners')
                                     ->label('Partners')
                                     ->schema([
-                                        TextInput::make('name')
+                                        Select::make('name')
                                             ->label('Partner Name')
-                                            ->required(),
+                                            ->required()
+                                            ->options(function () {
+                                                return User::where('role', 'Investor')
+                                                    ->where('id', '!=', Auth::id())
+                                                    ->pluck('name', 'name')
+                                                    ->toArray();
+                                            })
+                                            ->searchable(),
 
                                         TextInput::make('investment_amount')
                                             ->label('Investment Amount')
@@ -181,10 +197,38 @@ class InvestmentPoolRelationManager extends RelationManager
                             'user_id' => $data['user_id'],
                         ]);
 
+                        // Create wallet allocations for each partner
+                        if (isset($data['partners']) && is_array($data['partners'])) {
+                            foreach ($data['partners'] as $partner) {
+                                if (isset($partner['name']) && isset($partner['investment_amount'])) {
+                                    $investor = User::where('name', $partner['name'])->first();
+                                    if ($investor) {
+                                        // Create or update wallet allocation
+                                        WalletAllocation::updateOrCreate(
+                                            [
+                                                'investor_id' => $investor->id,
+                                                'investment_pool_id' => $record->id,
+                                            ],
+                                            [
+                                                'amount' => $partner['investment_amount'],
+                                            ]
+                                        );
+
+                                        // Send notification to investor
+                                        Notification::make()
+                                            ->title('Investment Allocation')
+                                            ->success()
+                                            ->body("You have been allocated PKR " . number_format($partner['investment_amount']) . " to investment pool: " . $record->name)
+                                            ->sendToDatabase($investor);
+                                    }
+                                }
+                            }
+                        }
+
                         Notification::make()
                             ->title('Investment Pool Updated!')
                             ->success()
-                            ->body('Investment pool has been updated successfully.')
+                            ->body('Investment pool has been updated successfully and wallet allocations have been created.')
                             ->send();
                     }),
 

@@ -78,8 +78,8 @@ class InvestmentPoolForm
                                     ->required()
                                     ->reactive()
                                     ->afterStateUpdated(function (callable $set, callable $get, $state) {
-                                        $amountRequired = $get('../../amount_required');
-                                        $percentage = $amountRequired ? round(($state / $amountRequired) * 100) : 0;
+                                        $amountRequired = floatval($get('../../amount_required') ?? 0);
+                                        $percentage = $amountRequired > 0 ? round(($state / $amountRequired) * 100, 2) : 0;
                                         $set('investment_percentage', $percentage);
                                     }),
                                 TextInput::make('investment_percentage')

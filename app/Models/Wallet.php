@@ -50,26 +50,28 @@ class Wallet extends Model
 
     public function allocations()
     {
-        return $this->hasMany(WalletAllocation::class, 'investor_id', 'investor_id');
+        return $this->hasMany(WalletAllocation::class, 'wallet_id');
     }
 
     public function getAvailableBalanceAttribute()
     {
-        $totalDeposited = $this->amount;
-        $totalAllocated = $this->allocations()->sum('amount');
+        $totalDeposited = floatval($this->amount ?? 0);
+        // Only get allocations from THIS specific wallet
+        $totalAllocated = floatval($this->allocations()->sum('amount') ?? 0);
         return $totalDeposited - $totalAllocated;
     }
 
     public function getTotalInvestedAttribute()
     {
-        return $this->allocations()->sum('amount');
+        // Only get allocations from THIS specific wallet
+        return floatval($this->allocations()->sum('amount') ?? 0);
     }
 
     public function getWalletStatusAttribute()
     {
-        $balance = $this->available_balance;
+        $balance = floatval($this->available_balance ?? 0);
         
-        if ($balance == 0) {
+        if ($balance <= 0) {
             return ['status' => 'empty', 'color' => 'danger', 'text' => 'Empty Wallet'];
         } elseif ($balance < 50000) {
             return ['status' => 'low', 'color' => 'warning', 'text' => 'Low Balance'];

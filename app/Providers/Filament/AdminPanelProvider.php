@@ -32,6 +32,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->registration(Register::class)
             ->brandName('Lotrix')
+            ->databaseNotifications()
             ->pages([
                 \Filament\Pages\Dashboard::class,
             ])

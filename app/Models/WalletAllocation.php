@@ -10,6 +10,7 @@ class WalletAllocation extends Model
     use HasFactory;
 
     protected $fillable = [
+        'wallet_id',
         'investor_id',
         'investment_pool_id',
         'amount',
@@ -18,6 +19,16 @@ class WalletAllocation extends Model
     protected $casts = [
         'amount' => 'decimal:2',
     ];
+
+    protected static function booted()
+    {
+        // No notification logic - keeping it simple
+    }
+
+    public function wallet()
+    {
+        return $this->belongsTo(Wallet::class, 'wallet_id');
+    }
 
     public function investor()
     {

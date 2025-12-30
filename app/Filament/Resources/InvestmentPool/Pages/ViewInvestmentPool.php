@@ -48,126 +48,88 @@ class ViewInvestmentPool extends ViewRecord
                     $paymentPercentage = $sellingPrice > 0 ? round(($marketPaymentsReceived / $sellingPrice) * 100, 1) : 0;
                     $balanceRemaining = $sellingPrice - $marketPaymentsReceived;
 
-                    return new HtmlString('
-                    <div class="space-y-4 p-2">
-                        <!-- Cost Breakdown Section -->
-                        <div class="bg-gradient-to-r from-red-50 to-red-100 rounded-xl p-6 shadow-sm border border-red-200">
-                            <h3 class="text-lg font-bold text-red-800 mb-4 flex items-center">
-                                <span class="mr-2">💰</span> Cost Breakdown
-                            </h3>
-                            <div class="grid grid-cols-3 gap-4">
-                                <div class="bg-white rounded-lg p-4 shadow-sm">
-                                    <div class="text-2xl mb-1">📦</div>
-                                    <div class="text-xs text-red-600 font-medium">Materials</div>
-                                    <div class="text-xl font-bold text-red-800">PKR ' . number_format($materialsTotal, 0) . '</div>
-                                </div>
-                                <div class="bg-white rounded-lg p-4 shadow-sm">
-                                    <div class="text-2xl mb-1">👷</div>
-                                    <div class="text-xs text-red-600 font-medium">Labor</div>
-                                    <div class="text-xl font-bold text-red-800">PKR ' . number_format($expensesTotal, 0) . '</div>
-                                </div>
-                                <div class="bg-red-600 rounded-lg p-4 shadow-sm text-white">
-                                    <div class="text-2xl mb-1">📊</div>
-                                    <div class="text-xs text-red-100 font-medium">Total Cost</div>
-                                    <div class="text-xl font-bold">PKR ' . number_format($totalCost, 0) . '</div>
+                    return new HtmlString("
+                        <div style='background: #1f2937; padding: 24px; border-radius: 8px;'>
+                            <!-- Cost Breakdown Section -->
+                            <div style='margin-bottom: 32px;'>
+                                <h3 style='color: white; font-size: 18px; font-weight: 600; margin-bottom: 16px; text-transform: uppercase;'>COST BREAKDOWN</h3>
+                                <div style='display: table; width: 100%; border-collapse: collapse;'>
+                                    <div style='display: table-row;'>
+                                        <div style='display: table-cell; padding: 8px; color: #9ca3af; font-size: 14px; width: 50%;'>Materials</div>
+                                        <div style='display: table-cell; padding: 8px; color: white; font-size: 14px; text-align: right; width: 50%; font-weight: 500;'>PKR " . number_format($materialsTotal, 0) . "</div>
+                                    </div>
+                                    <div style='display: table-row;'>
+                                        <div style='display: table-cell; padding: 8px; color: #9ca3af; font-size: 14px; width: 50%;'>Labor</div>
+                                        <div style='display: table-cell; padding: 8px; color: white; font-size: 14px; text-align: right; width: 50%; font-weight: 500;'>PKR " . number_format($expensesTotal, 0) . "</div>
+                                    </div>
+                                    <div style='display: table-row;'>
+                                        <div style='display: table-cell; padding: 8px; color: #9ca3af; font-size: 14px; width: 50%; font-weight: 600;'>Total Cost</div>
+                                        <div style='display: table-cell; padding: 8px; color: white; font-size: 16px; text-align: right; width: 50%; font-weight: 600;'>PKR " . number_format($totalCost, 0) . "</div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Pricing Section -->
-                        <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6 shadow-sm border border-green-200">
-                            <h3 class="text-lg font-bold text-green-800 mb-4 flex items-center">
-                                <span class="mr-2">💵</span> Pricing Details
-                            </h3>
-                            <div class="grid grid-cols-3 gap-4">
-                                <div class="bg-white rounded-lg p-4 shadow-sm">
-                                    <div class="text-2xl mb-1">📈</div>
-                                    <div class="text-xs text-green-600 font-medium">Profit Margin</div>
-                                    <div class="text-xl font-bold text-green-800">' . $profitPercentage . '%</div>
-                                </div>
-                                <div class="bg-white rounded-lg p-4 shadow-sm">
-                                    <div class="text-2xl mb-1">💎</div>
-                                    <div class="text-xs text-green-600 font-medium">Profit Amount</div>
-                                    <div class="text-xl font-bold text-green-800">PKR ' . number_format($profitAmount, 0) . '</div>
-                                </div>
-                                <div class="bg-green-600 rounded-lg p-4 shadow-sm text-white">
-                                    <div class="text-2xl mb-1">🏷️</div>
-                                    <div class="text-xs text-green-100 font-medium">Selling Price</div>
-                                    <div class="text-xl font-bold">PKR ' . number_format($sellingPrice, 0) . '</div>
+                            
+                            <!-- Pricing Section -->
+                            <div style='margin-bottom: 32px;'>
+                                <h3 style='color: white; font-size: 18px; font-weight: 600; margin-bottom: 16px; text-transform: uppercase;'>PRICING</h3>
+                                <div style='display: table; width: 100%; border-collapse: collapse;'>
+                                    <div style='display: table-row;'>
+                                        <div style='display: table-cell; padding: 8px; color: #9ca3af; font-size: 14px; width: 50%;'>Profit Margin</div>
+                                        <div style='display: table-cell; padding: 8px; color: white; font-size: 14px; text-align: right; width: 50%; font-weight: 500;'>" . $profitPercentage . "%</div>
+                                    </div>
+                                    <div style='display: table-row;'>
+                                        <div style='display: table-cell; padding: 8px; color: #9ca3af; font-size: 14px; width: 50%;'>Profit Amount</div>
+                                        <div style='display: table-cell; padding: 8px; color: white; font-size: 14px; text-align: right; width: 50%; font-weight: 500;'>PKR " . number_format($profitAmount, 0) . "</div>
+                                    </div>
+                                    <div style='display: table-row;'>
+                                        <div style='display: table-cell; padding: 8px; color: #9ca3af; font-size: 14px; width: 50%; font-weight: 600;'>Selling Price</div>
+                                        <div style='display: table-cell; padding: 8px; color: white; font-size: 16px; text-align: right; width: 50%; font-weight: 600;'>PKR " . number_format($sellingPrice, 0) . "</div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Payment Status Section -->
-                        <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 shadow-sm border border-blue-200">
-                            <h3 class="text-lg font-bold text-blue-800 mb-4 flex items-center">
-                                <span class="mr-2">💳</span> Payment Status
-                            </h3>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="bg-white rounded-lg p-4 shadow-sm">
-                                    <div class="text-2xl mb-1">✅</div>
-                                    <div class="text-xs text-blue-600 font-medium">Amount Received</div>
-                                    <div class="text-xl font-bold text-blue-800">PKR ' . number_format($marketPaymentsReceived, 0) . '</div>
-                                    <div class="text-xs text-blue-600 mt-1">' . $paymentPercentage . '% of selling price</div>
-                                </div>
-                                <div class="bg-blue-600 rounded-lg p-4 shadow-sm text-white">
-                                    <div class="text-2xl mb-1">⏳</div>
-                                    <div class="text-xs text-blue-100 font-medium">Remaining Balance</div>
-                                    <div class="text-xl font-bold">PKR ' . number_format($balanceRemaining, 0) . '</div>
-                                    <div class="text-xs text-blue-100 mt-1">' . round((100 - $paymentPercentage), 1) . '% pending</div>
+                            
+                            <!-- Payment Status Section -->
+                            <div style='margin-bottom: 32px;'>
+                                <h3 style='color: white; font-size: 18px; font-weight: 600; margin-bottom: 16px; text-transform: uppercase;'>PAYMENT STATUS</h3>
+                                <div style='display: table; width: 100%; border-collapse: collapse;'>
+                                    <div style='display: table-row;'>
+                                        <div style='display: table-cell; padding: 8px; color: #9ca3af; font-size: 14px; width: 50%;'>Amount Received</div>
+                                        <div style='display: table-cell; padding: 8px; color: white; font-size: 14px; text-align: right; width: 50%; font-weight: 500;'>PKR " . number_format($marketPaymentsReceived, 0) . "</div>
+                                    </div>
+                                    <div style='display: table-row;'>
+                                        <div style='display: table-cell; padding: 8px; color: #9ca3af; font-size: 14px; width: 50%; font-weight: 600;'>Remaining Balance</div>
+                                        <div style='display: table-cell; padding: 8px; color: white; font-size: 16px; text-align: right; width: 50%; font-weight: 600;'>PKR " . number_format($balanceRemaining, 0) . "</div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Investment Collection Status -->
-                        <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6 shadow-sm border border-purple-200">
-                            <h3 class="text-lg font-bold text-purple-800 mb-4 flex items-center">
-                                <span class="mr-2">🏦</span> Investment Collection Status
-                            </h3>
-                            <div class="grid grid-cols-4 gap-3">
-                                <div class="bg-white rounded-lg p-3 shadow-sm text-center">
-                                    <div class="text-xl mb-1">💰</div>
-                                    <div class="text-xs text-purple-600 font-medium">Total Collected</div>
-                                    <div class="text-lg font-bold text-purple-800">PKR ' . number_format($record->total_collected, 0) . '</div>
-                                </div>
-                                <div class="bg-white rounded-lg p-3 shadow-sm text-center">
-                                    <div class="text-xl mb-1">📊</div>
-                                    <div class="text-xs text-purple-600 font-medium">Progress</div>
-                                    <div class="text-lg font-bold text-purple-800">' . number_format($record->percentage_collected, 1) . '%</div>
-                                </div>
-                                <div class="bg-white rounded-lg p-3 shadow-sm text-center">
-                                    <div class="text-xl mb-1">💸</div>
-                                    <div class="text-xs text-purple-600 font-medium">Remaining</div>
-                                    <div class="text-lg font-bold text-purple-800">PKR ' . number_format($record->remaining_amount, 0) . '</div>
-                                </div>
-                                <div class="bg-purple-600 rounded-lg p-3 shadow-sm text-white text-center">
-                                    <div class="text-xl mb-1">👥</div>
-                                    <div class="text-xs text-purple-100 font-medium">Partners</div>
-                                    <div class="text-lg font-bold">' . $record->number_of_partners . '</div>
+                            
+                            <!-- Investment Status -->
+                            <div style='margin-bottom: 32px;'>
+                                <h3 style='color: white; font-size: 18px; font-weight: 600; margin-bottom: 16px; text-transform: uppercase;'>INVESTMENT COLLECTION STATUS</h3>
+                                <div style='display: table; width: 100%; border-collapse: collapse;'>
+                                    <div style='display: table-row;'>
+                                        <div style='display: table-cell; padding: 12px; background: #374151; border-radius: 6px; text-align: center; width: 25%;'>
+                                            <div style='color: #9ca3af; font-size: 12px; margin-bottom: 4px;'>Total Collected</div>
+                                            <div style='color: white; font-size: 16px; font-weight: 600;'>PKR " . number_format($record->total_collected, 0) . "</div>
+                                        </div>
+                                        <div style='display: table-cell; padding: 12px; background: #374151; border-radius: 6px; text-align: center; width: 25%;'>
+                                            <div style='color: #9ca3af; font-size: 12px; margin-bottom: 4px;'>Collection Progress</div>
+                                            <div style='color: white; font-size: 16px; font-weight: 600;'>" . number_format($record->percentage_collected, 2) . "%</div>
+                                        </div>
+                                        <div style='display: table-cell; padding: 12px; background: #374151; border-radius: 6px; text-align: center; width: 25%;'>
+                                            <div style='color: #9ca3af; font-size: 12px; margin-bottom: 4px;'>Remaining Amount</div>
+                                            <div style='color: white; font-size: 16px; font-weight: 600;'>PKR " . number_format($record->remaining_amount, 0) . "</div>
+                                        </div>
+                                        <div style='display: table-cell; padding: 12px; background: #374151; border-radius: 6px; text-align: center; width: 25%;'>
+                                            <div style='color: #9ca3af; font-size: 12px; margin-bottom: 4px;'>Total Partners</div>
+                                            <div style='color: white; font-size: 16px; font-weight: 600;'>" . $record->number_of_partners . "</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                            
                         </div>
-                        
-                        <!-- Partner Distribution Overview -->
-                        <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-xl p-6 shadow-sm border border-indigo-200">
-                            <h3 class="text-lg font-bold text-indigo-800 mb-4 flex items-center">
-                                <span class="mr-2">🤝</span> Partner Distribution Overview
-                            </h3>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="bg-white rounded-lg p-4 shadow-sm">
-                                    <div class="text-2xl mb-1">🏦</div>
-                                    <div class="text-xs text-indigo-600 font-medium">Total Investment</div>
-                                    <div class="text-xl font-bold text-indigo-800">PKR ' . number_format($record->total_collected, 0) . '</div>
-                                </div>
-                                <div class="bg-indigo-600 rounded-lg p-4 shadow-sm text-white">
-                                    <div class="text-2xl mb-1">📈</div>
-                                    <div class="text-xs text-indigo-100 font-medium">Expected Returns</div>
-                                    <div class="text-xl font-bold">PKR ' . number_format($sellingPrice, 0) . '</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ');
+                    ");
                 }),
                 
             Action::make('view_partners')
@@ -194,33 +156,31 @@ class ViewInvestmentPool extends ViewRecord
                     }
                     
                     $partnersHtml = '
-                    <div class="space-y-4 p-2">
-                        <!-- Summary Header -->
-                        <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-xl p-6 shadow-sm border border-indigo-200">
-                            <h3 class="text-lg font-bold text-indigo-800 mb-2 flex items-center">
-                                <span class="mr-2">👥</span> Partner Distribution Overview
-                            </h3>
-                            <div class="grid grid-cols-3 gap-4">
-                                <div class="bg-white rounded-lg p-4 shadow-sm text-center">
-                                    <div class="text-2xl mb-1">👫</div>
-                                    <div class="text-xs text-indigo-600 font-medium">Total Partners</div>
-                                    <div class="text-xl font-bold text-indigo-800">' . count($record->partners) . '</div>
-                                </div>
-                                <div class="bg-white rounded-lg p-4 shadow-sm text-center">
-                                    <div class="text-2xl mb-1">💰</div>
-                                    <div class="text-xs text-indigo-600 font-medium">Total Investment</div>
-                                    <div class="text-xl font-bold text-indigo-800">PKR ' . number_format($record->total_collected, 0) . '</div>
-                                </div>
-                                <div class="bg-indigo-600 rounded-lg p-4 shadow-sm text-white text-center">
-                                    <div class="text-2xl mb-1">📈</div>
-                                    <div class="text-xs text-indigo-100 font-medium">Expected Returns</div>
-                                    <div class="text-xl font-bold">PKR ' . number_format($sellingPrice, 0) . '</div>
+                    <div style="background: #1f2937; padding: 24px; border-radius: 8px;">
+                        <!-- Partner Distribution Overview -->
+                        <div style="margin-bottom: 32px;">
+                            <h3 style="color: white; font-size: 18px; font-weight: 600; margin-bottom: 16px; text-transform: uppercase;">PARTNER DISTRIBUTION OVERVIEW</h3>
+                            <div style="display: table; width: 100%; border-collapse: collapse;">
+                                <div style="display: table-row;">
+                                    <div style="display: table-cell; padding: 12px; background: #374151; border-radius: 6px; text-align: center; width: 33.33%;">
+                                        <div style="color: #9ca3af; font-size: 12px; margin-bottom: 4px;">Total Partners</div>
+                                        <div style="color: white; font-size: 16px; font-weight: 600;">' . count($record->partners) . '</div>
+                                    </div>
+                                    <div style="display: table-cell; padding: 12px; background: #374151; border-radius: 6px; text-align: center; width: 33.33%;">
+                                        <div style="color: #9ca3af; font-size: 12px; margin-bottom: 4px;">Total Investment</div>
+                                        <div style="color: white; font-size: 16px; font-weight: 600;">PKR ' . number_format($record->total_collected, 0) . '</div>
+                                    </div>
+                                    <div style="display: table-cell; padding: 12px; background: #374151; border-radius: 6px; text-align: center; width: 33.33%;">
+                                        <div style="color: #9ca3af; font-size: 12px; margin-bottom: 4px;">Expected Returns</div>
+                                        <div style="color: white; font-size: 16px; font-weight: 600;">PKR ' . number_format($sellingPrice, 0) . '</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
                         <!-- Individual Partners -->
-                        <div class="space-y-3">';
+                        <div style="margin-bottom: 32px;">
+                            <h3 style="color: white; font-size: 18px; font-weight: 600; margin-bottom: 16px; text-transform: uppercase;">INDIVIDUAL PARTNER DETAILS</h3>';
                     
                     foreach ($record->partners as $index => $partner) {
                         $partnerName = $partner['name'] ?? "Partner " . ($index + 1);
@@ -229,49 +189,34 @@ class ViewInvestmentPool extends ViewRecord
                         $expectedReturn = $sellingPrice * ($partnerPercentage / 100);
                         
                         $partnersHtml .= '
-                            <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                                <div class="flex items-start justify-between mb-4">
-                                    <div class="flex items-center">
-                                        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg mr-4">
-                                            ' . strtoupper(substr($partnerName, 0, 1)) . '
-                                        </div>
-                                        <div>
-                                            <h4 class="text-lg font-bold text-gray-800">' . $partnerName . '</h4>
-                                            <div class="text-sm text-gray-600">Partner #' . ($index + 1) . '</div>
-                                        </div>
+                            <div style="background: #374151; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                                <div style="display: table; width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+                                    <div style="display: table-row;">
+                                        <div style="display: table-cell; padding: 8px; color: #9ca3af; font-size: 14px; width: 25%;">Partner Name</div>
+                                        <div style="display: table-cell; padding: 8px; color: white; font-size: 14px; font-weight: 600; width: 75%;">' . $partnerName . ' (Partner #' . ($index + 1) . ')</div>
                                     </div>
-                                    <div class="text-right">
-                                        <div class="text-xs text-gray-500">Investment Share</div>
-                                        <div class="text-2xl font-bold text-purple-600">' . $partnerPercentage . '%</div>
+                                    <div style="display: table-row;">
+                                        <div style="display: table-cell; padding: 8px; color: #9ca3af; font-size: 14px; width: 25%;">Investment Share</div>
+                                        <div style="display: table-cell; padding: 8px; color: white; font-size: 14px; text-align: right; width: 75%; font-weight: 600;">' . $partnerPercentage . '%</div>
                                     </div>
                                 </div>
                                 
-                                <div class="grid grid-cols-3 gap-4">
-                                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                                        <div class="flex items-center mb-2">
-                                            <span class="text-xl mr-2">💵</span>
-                                            <div class="text-xs text-blue-600 font-medium">Invested Amount</div>
+                                <div style="display: table; width: 100%; border-collapse: collapse;">
+                                    <div style="display: table-row;">
+                                        <div style="display: table-cell; padding: 8px; background: #4b5563; border-radius: 6px; text-align: center; width: 33.33%;">
+                                            <div style="color: #d1d5db; font-size: 12px; margin-bottom: 4px;">Invested Amount</div>
+                                            <div style="color: white; font-size: 14px; font-weight: 600;">PKR ' . number_format($partnerAmount, 0) . '</div>
                                         </div>
-                                        <div class="text-xl font-bold text-blue-800">PKR ' . number_format($partnerAmount, 0) . '</div>
-                                        <div class="text-xs text-blue-600 mt-1">of total investment</div>
-                                    </div>
-                                    
-                                    <div class="bg-green-50 rounded-lg p-4 border border-green-200">
-                                        <div class="flex items-center mb-2">
-                                            <span class="text-xl mr-2">📊</span>
-                                            <div class="text-xs text-green-600 font-medium">Expected Return</div>
+                                        <div style="display: table-cell; padding: 8px; background: #4b5563; border-radius: 6px; text-align: center; width: 33.33%;">
+                                            <div style="color: #d1d5db; font-size: 12px; margin-bottom: 4px;">Expected Return</div>
+                                            <div style="color: white; font-size: 14px; font-weight: 600;">PKR ' . number_format($expectedReturn, 0) . '</div>
+                                            <div style="color: #10b981; font-size: 11px;">' . round(($partnerAmount > 0 ? ($expectedReturn / $partnerAmount) * 100 : 0), 1) . '% ROI</div>
                                         </div>
-                                        <div class="text-xl font-bold text-green-800">PKR ' . number_format($expectedReturn, 0) . '</div>
-                                        <div class="text-xs text-green-600 mt-1">' . round(($partnerAmount > 0 ? ($expectedReturn / $partnerAmount) * 100 : 0), 1) . '% ROI</div>
-                                    </div>
-                                    
-                                    <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                                        <div class="flex items-center mb-2">
-                                            <span class="text-xl mr-2">🎯</span>
-                                            <div class="text-xs text-purple-600 font-medium">Profit Share</div>
+                                        <div style="display: table-cell; padding: 8px; background: #4b5563; border-radius: 6px; text-align: center; width: 33.33%;">
+                                            <div style="color: #d1d5db; font-size: 12px; margin-bottom: 4px;">Profit Share</div>
+                                            <div style="color: white; font-size: 14px; font-weight: 600;">PKR ' . number_format($expectedReturn - $partnerAmount, 0) . '</div>
+                                            <div style="color: #8b5cf6; font-size: 11px;">Net profit</div>
                                         </div>
-                                        <div class="text-xl font-bold text-purple-800">PKR ' . number_format($expectedReturn - $partnerAmount, 0) . '</div>
-                                        <div class="text-xs text-purple-600 mt-1">Net profit</div>
                                     </div>
                                 </div>
                             </div>';

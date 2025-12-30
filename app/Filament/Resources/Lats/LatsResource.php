@@ -91,6 +91,7 @@ class LatsResource extends Resource
             RelationManagers\MaterialsRelationManager::class,
             RelationManagers\ExpenseRelationManager::class,
             RelationManagers\SummaryRelationManager::class,
+            RelationManagers\InvestmentPoolRelationManager::class,
             // RelationManagers\PaymentsRelationManager::class,
         ];
     }

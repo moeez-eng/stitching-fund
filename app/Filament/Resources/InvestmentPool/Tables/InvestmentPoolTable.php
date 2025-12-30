@@ -5,12 +5,11 @@ namespace App\Filament\Resources\InvestmentPool\Tables;
 use Filament\Tables;
 use Filament\Tables\Table;
 use App\Models\InvestmentPool;
-use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\HtmlString;
 
 class InvestmentPoolTable
 {
@@ -39,6 +38,8 @@ class InvestmentPoolTable
                     ->color('primary')
                     ->sortable(),
 
+                // Custom Lat Summary Column
+               
                 Tables\Columns\TextColumn::make('total_collected')
                     ->label('Total Collected')
                     ->money('PKR')
@@ -61,7 +62,7 @@ class InvestmentPoolTable
                     ->color(fn (InvestmentPool $record): string => 
                         $record->remaining_amount > 0 ? 'warning' : 'success'
                     ),
-
+               
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created')
                     ->dateTime()
@@ -87,17 +88,10 @@ class InvestmentPoolTable
                     ->query(fn ($query) => $query->where('percentage_collected', 0)),
             ])
             ->actions([
-              EditAction::make()
-                  ->visible(fn () => Auth::user()?->role !== 'Investor'),
               ViewAction::make(),
-              DeleteAction::make()
-                  ->visible(fn () => Auth::user()?->role !== 'Investor'),
+              EditAction::make(),
+              DeleteAction::make(),
             ])
-            ->bulkActions([
-              BulkActionGroup::make([
-                  DeleteBulkAction::make()
-                      ->visible(fn () => Auth::user()?->role !== 'Investor'),
-                ]),
-            ]);
+            ->bulkActions([]);
     }
 }

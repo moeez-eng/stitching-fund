@@ -2,22 +2,27 @@
 
 namespace App\Filament\Resources\InvestmentPool;
 
-use BackedEnum;
-use UnitEnum;
-use App\Models\InvestmentPool;
-use App\Models\Lat;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Filament\Tables\Table;
-use Filament\Schemas\Schema;
-use Filament\Resources\Resource;
-use Filament\Support\Icons\Heroicon;
+use App\Filament\Resources\InvestmentPool\Tables\InvestmentPoolTable;
+use Filament\Schemas\Components\Placeholder;
+use App\Filament\Resources\InvestmentPool\Pages\ViewInvestmentPool;
 use App\Filament\Resources\InvestmentPool\Pages\EditInvestmentPool;
 use App\Filament\Resources\InvestmentPool\Pages\ListInvestmentPools;
 use App\Filament\Resources\InvestmentPool\Pages\CreateInvestmentPool;
 use App\Filament\Resources\InvestmentPool\Schemas\InvestmentPoolForm;
-use App\Filament\Resources\InvestmentPool\Tables\InvestmentPoolTable;
+use BackedEnum;
+use UnitEnum;
+use App\Models\Lat;
+use Filament\Tables\Table;
+use Filament\Schemas\Schema;
+use App\Models\InvestmentPool;
+use Filament\Resources\Resource;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Log;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Auth;
+use Filament\Schemas\Components\Section;
+use Illuminate\Database\Eloquent\Builder;
+use Filament\Infolists\Components\TextEntry;
 
 class InvestmentPoolResource extends Resource
 {
@@ -37,6 +42,7 @@ class InvestmentPoolResource extends Resource
         return InvestmentPoolTable::configure($table);
     }
 
+    
     public static function getRelations(): array
     {
         return [
@@ -48,7 +54,7 @@ class InvestmentPoolResource extends Resource
     {
         return [
             'index' => ListInvestmentPools::route('/'),
-            'create' => CreateInvestmentPool::route('/create'),
+            'view' => ViewInvestmentPool::route('/{record}'),
             'edit' => EditInvestmentPool::route('/{record}/edit'),
         ];
     }
@@ -121,8 +127,8 @@ class InvestmentPoolResource extends Resource
         $user = Auth::user();
         if (!$user) return false;
         
-        // Super Admin and Agency Owner can create
-        return in_array($user->role, ['Super Admin', 'Agency Owner']);
+        // Only Super Admin can create
+        return $user->role === 'Super Admin';
     }
 
     public static function canDelete($record): bool

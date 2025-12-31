@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Users\Pages;
 
 use App\Filament\Resources\Users\UsersResource;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Facades\Auth;
 
 class CreateUsers extends CreateRecord
 {
@@ -16,6 +17,14 @@ class CreateUsers extends CreateRecord
             $data['status'] = 'active';
         } else {
             $data['status'] = 'inactive';
+        }
+        
+        // Auto-set agency_owner_id for Investor users if not provided
+        if ($data['role'] === 'Investor' && !isset($data['agency_owner_id'])) {
+            $currentUser = Auth::user();
+            if ($currentUser && ($currentUser->role === 'Agency Owner' || $currentUser->role === 'Super Admin')) {
+                $data['agency_owner_id'] = $currentUser->id;
+            }
         }
         
         return $data;

@@ -19,7 +19,23 @@ class WalletForm
                     if ($user->role === 'Super Admin') {
                         return User::where('role', 'Investor')->pluck('name', 'id');
                     } elseif ($user->role === 'Agency Owner') {
-                        return User::where('role', 'Investor')->where('agency_owner_id', $user->id)->pluck('name', 'id');
+                        return User::where('role', 'Investor')
+                            ->where('agency_owner_id', $user->id)
+                            ->pluck('name', 'id');
+                    }
+                    return [];
+                })
+                ->getSearchResultsUsing(function (string $search) {
+                    $user = Auth::user();
+                    if ($user->role === 'Super Admin') {
+                        return User::where('role', 'Investor')
+                            ->where('name', 'like', "%{$search}%")
+                            ->pluck('name', 'id');
+                    } elseif ($user->role === 'Agency Owner') {
+                        return User::where('role', 'Investor')
+                            ->where('agency_owner_id', $user->id)
+                            ->where('name', 'like', "%{$search}%")
+                            ->pluck('name', 'id');
                     }
                     return [];
                 })

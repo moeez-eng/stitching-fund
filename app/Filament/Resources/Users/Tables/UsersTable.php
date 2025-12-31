@@ -3,15 +3,16 @@
 namespace App\Filament\Resources\Users\Tables;
 
 use Filament\Tables\Table;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
+use Filament\Tables\Filters\Filter;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\TextInput;
 
 class UsersTable
 {
@@ -86,8 +87,13 @@ class UsersTable
                     ->visible(fn ($record) => $record?->role !== 'Super Admin'),
             ])
             ->toolbarActions([
+                 Action::make('refresh')
+                ->label('Refresh')
+                ->icon('heroicon-o-arrow-path')
+                ->action(fn () => null) // forces Livewire re-render
+                ->tooltip('Reload table data'),
                 BulkActionGroup::make([
-                    DeleteBulkAction::make()
+                 DeleteBulkAction::make()
                         ->before(function ($records) {
                             // Prevent deletion of Super Admin users
                             $superAdminCount = $records->where('role', 'Super Admin')->count();

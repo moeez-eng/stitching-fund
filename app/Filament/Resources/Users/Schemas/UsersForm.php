@@ -4,8 +4,6 @@ namespace App\Filament\Resources\Users\Schemas;
 
 use Filament\Forms;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Auth;
-use Filament\Forms\Components\Select;
 
 class UsersForm
 {
@@ -26,24 +24,13 @@ class UsersForm
                     ->required(fn (string $context): bool => $context === 'create')
                     ->dehydrateStateUsing(fn ($state) => bcrypt($state))
                     ->dehydrated(fn ($state) => filled($state)),
-                Select::make('role')
+                Forms\Components\Select::make('role')
                     ->options([
                         'Super Admin' => 'Super Admin',
                         'Agency Owner' => 'Agency Owner',
                         'Investor' => 'Investor',
                     ])
-                    ->required()
-                    ->live()
-                    ->afterStateUpdated(fn ($state, callable $set) => $set('agency_owner_id', null)),
-                Select::make('agency_owner_id')
-                    ->label('Agency Owner')
-                    ->options(function () {
-                        return \App\Models\User::where('role', 'Agency Owner')
-                            ->orWhere('role', 'Super Admin')
-                            ->pluck('name', 'id');
-                    })
-                    ->visible(fn (callable $get) => $get('role') === 'Investor')
-                    ->required(fn (callable $get) => $get('role') === 'Investor'),
+                    ->required(),
                 Forms\Components\Toggle::make('status')
                     ->label('Active')
                     ->default(true)

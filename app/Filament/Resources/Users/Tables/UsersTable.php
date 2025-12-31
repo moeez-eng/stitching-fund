@@ -12,7 +12,6 @@ use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\TextInput;
-use Filament\Actions\Action;
 
 class UsersTable
 {
@@ -87,13 +86,6 @@ class UsersTable
                     ->visible(fn ($record) => $record?->role !== 'Super Admin'),
             ])
             ->toolbarActions([
-                Action::make('refresh')
-                    ->label('Refresh')
-                    ->icon('heroicon-o-arrow-path')
-                    ->action(function () {
-                        // Reload the page to refresh all user data
-                        return redirect()->route('filament.admin.resources.users.index');
-                    }),
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->before(function ($records) {

@@ -71,6 +71,15 @@ class Register extends BaseRegister
                 // Store invitation data before deletion
                 $this->invitationData = $this->invitation->toArray();
                 
+                // Store invitation data in session to persist across form submission
+                session(['invitation_data' => $this->invitationData]);
+                
+                // Debug: Log invitation data before deletion
+                Log::info('Invitation data stored:', [
+                    'invitationData' => $this->invitationData,
+                    'invited_by_value' => $this->invitationData['invited_by'] ?? 'MISSING'
+                ]);
+                
                 // Delete invitation immediately (one-time use)
                 $this->invitation->delete();
                 
@@ -141,10 +150,25 @@ class Register extends BaseRegister
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        // Get invitation data from session if not available in property
+        if (!$this->invitationData && session('invitation_data')) {
+            $this->invitationData = session('invitation_data');
+            Log::info('Retrieved invitation data from session:', ['invitationData' => $this->invitationData]);
+        }
+        
         // Ensure role is set correctly based on invitation
         if ($this->invitationData) {
             $data['role'] = 'Investor';
             $data['email'] = $this->invitationData['email'];
+            // Set agency owner ID from invitation
+            $data['agency_owner_id'] = $this->invitationData['invited_by'];
+            
+            // Debug: Log invitation data and agency owner ID
+            Log::info('Invitation data:', ['invitationData' => $this->invitationData]);
+            Log::info('Setting agency_owner_id:', ['agency_owner_id' => $this->invitationData['invited_by']]);
+            
+            // Clear session data after use
+            session()->forget('invitation_data');
         } else {
             $data['role'] = 'Agency Owner';
         }

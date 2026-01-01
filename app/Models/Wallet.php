@@ -53,19 +53,18 @@ class Wallet extends Model
         return $this->hasMany(WalletAllocation::class, 'wallet_id');
     }
 
-    public function getAvailableBalanceAttribute()
+        public function getAvailableBalanceAttribute()
     {
-        $totalDeposited = floatval($this->amount ?? 0);
-        // Only get allocations from THIS specific wallet
-        $totalAllocated = floatval($this->allocations()->sum('amount') ?? 0);
-        return $totalDeposited - $totalAllocated;
+        $totalDeposited = (float)($this->amount ?? 0);
+        $totalAllocated = (float)($this->allocations()->sum('amount') ?? 0);
+        return max(0, $totalDeposited - $totalAllocated);
     }
-
     public function getTotalInvestedAttribute()
     {
-        // Only get allocations from THIS specific wallet
-        return floatval($this->allocations()->sum('amount') ?? 0);
+        return (float)($this->allocations()->sum('amount') ?? 0);
     }
+
+   
 
     public function getWalletStatusAttribute()
     {

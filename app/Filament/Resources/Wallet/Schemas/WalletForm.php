@@ -20,7 +20,7 @@ class WalletForm
                         return User::where('role', 'Investor')->pluck('name', 'id');
                     } elseif ($user->role === 'Agency Owner') {
                         return User::where('role', 'Investor')
-                            ->where('agency_owner_id', $user->id)
+                            ->where('invited_by', $user->id)
                             ->pluck('name', 'id');
                     }
                     return [];
@@ -33,7 +33,7 @@ class WalletForm
                             ->pluck('name', 'id');
                     } elseif ($user->role === 'Agency Owner') {
                         return User::where('role', 'Investor')
-                            ->where('agency_owner_id', $user->id)
+                            ->where('invited_by', $user->id)
                             ->where('name', 'like', "%{$search}%")
                             ->pluck('name', 'id');
                     }
@@ -51,11 +51,14 @@ class WalletForm
                     'check' => 'Check',
                 ])
                 ->required(),
-            Forms\Components\FileUpload::make('slip_path')
+           Forms\Components\FileUpload::make('slip_path')
                 ->label('Deposit Slip')
+                ->disk('public')  // Explicitly set to public disk
                 ->directory('wallet-slips')
+                ->visibility('public')  // Make files publicly accessible
                 ->downloadable()
-                ->openable(),
+                ->openable()
+                ->preserveFilenames(),  // Keep original filenames
             Forms\Components\TextInput::make('reference')
                 ->label('Reference/Check #')
                 ->maxLength(255),

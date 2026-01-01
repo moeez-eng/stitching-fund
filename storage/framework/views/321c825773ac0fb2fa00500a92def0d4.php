@@ -40,7 +40,7 @@
                 $userEmail = $wallet->investor->email ?? '';
             ?>
             
-            <div style="max-width: 600px; margin: 0 auto; border-radius: 20px; background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.1); overflow: hidden;">
+            <div style="width: 100%; border-radius: 20px; background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.1); overflow: hidden;">
                 <div style="padding: 24px; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 16px;">
                         <div style="width: 56px; height: 56px; border-radius: 50%; background: #7c3aed; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold;">
@@ -65,15 +65,39 @@
                         <div style="color: #22c55e; font-size: 15px; margin-top: 8px;">↑ +12.5% this month</div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; text-align: center;">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; margin-bottom: 16px;">
                         <div style="background: rgba(124, 58, 237, 0.1); padding: 16px; border-radius: 12px;">
                             <div style="color: #6b7280; font-size: 13px;">Deposited</div>
-                            <div style="font-weight: bold; font-size: 20px; color: #22c55e;"> <?php echo e(number_format($wallet->amount, 0)); ?></div>
+                            <div style="font-weight: bold; font-size: 20px; color: #22c55e;">PKR <?php echo e(number_format($wallet->amount, 0)); ?></div>
                         </div>
                         <div style="background: rgba(124, 58, 237, 0.1); padding: 16px; border-radius: 12px;">
                             <div style="color: #6b7280; font-size: 13px;">Invested</div>
-                            <div style="font-weight: bold; font-size: 20px; color: #22c55e;"> <?php echo e(number_format($totalInvested, 0)); ?></div>
+                            <div style="font-weight: bold; font-size: 20px; color: #22c55e;">PKR <?php echo e(number_format($totalInvested, 0)); ?></div>
                         </div>
+                        <div style="background: rgba(16, 185, 129, 0.1); padding: 16px; border-radius: 12px;">
+                            <div style="color: #6b7280; font-size: 13px;">Pool Balance</div>
+                            <div style="font-weight: bold; font-size: 20px; color: #10b981;">PKR <?php echo e(number_format($wallet->pool_balance ?? 0, 0)); ?></div>
+                        </div>
+                    </div>
+
+                    <?php
+                        $poolPercentage = $wallet->pool_balance ? min(100, ($wallet->pool_balance / $wallet->amount) * 100) : 0;
+                    ?>
+                    <div style="margin-bottom: 16px;
+                                background: rgba(124, 58, 237, 0.1);
+                                border-radius: 10px;
+                                height: 10px;
+                                width: 100%;">
+                        <div style="height: 100%;
+                                width: <?php echo e($poolPercentage); ?>%;
+                                background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+                                border-radius: 10px;
+                                transition: width 0.5s ease-in-out;">
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 12px; color: #6b7280;">
+                        <span>Pool Progress</span>
+                        <span><?php echo e(number_format($poolPercentage, 1)); ?>%</span>
                     </div>
 
                     <!-- Investment Pool Section -->
@@ -134,9 +158,15 @@
                     <!-- Quick Actions - Only for Agency Owners -->
                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user->role === 'Agency Owner'): ?>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 20px;">
-                        <a href="<?php echo e(\App\Filament\Resources\Wallet\WalletResource::getUrl('create')); ?>" 
-                           style="padding: 12px; background: #22c55e; color: white; border-radius: 8px; font-size: 12px; text-decoration: none; text-align: center; display: block; font-weight: 500;">
-                            💰 Deposit
+                       <a href="<?php echo e($wallet->deposit_slip ? Storage::url($wallet->deposit_slip) : '#'); ?>" 
+                        target="_blank"
+                        style="padding: 12px; background: #22c55e; color: white; border-radius: 8px; font-size: 12px; text-decoration: none; text-align: center; display: block; font-weight: 500;"
+                        <?php if(!$wallet->deposit_slip): ?> onclick="return false; event.preventDefault();" style="opacity: 0.7; cursor: not-allowed;" <?php endif; ?>>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($wallet->deposit_slip): ?>
+                                View Deposit Slip
+                            <?php else: ?>
+                                No Slip Available
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </a>
                         <button onclick="alert('Investment feature coming soon! This will invest available balance into the pool.')" 
                                 style="padding: 12px; background: #7c3aed; color: white; border-radius: 8px; font-size: 12px; border: none; cursor: pointer; font-weight: 500;">
@@ -149,13 +179,24 @@
                     </div>
                     <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </div>
-
                 <div style="padding: 20px 24px; background: rgba(124, 58, 237, 0.05); display: flex; gap: 12px;">
-                    <a href="<?php echo e(\App\Filament\Resources\Wallet\WalletResource::getUrl('edit', ['record' => $wallet->id])); ?>"
-                       style="flex: 1; padding: 12px; background: #6b7280; color: white; border-radius: 12px; text-align: center; text-decoration: none;"
-                       <?php if($user->role === 'Investor'): ?> onclick="return false;" style="opacity: 0.5; cursor: not-allowed;" <?php endif; ?>>
-                        Edit
-                    </a>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user->role === 'Agency Owner'): ?>
+                        <a href="<?php echo e(\App\Filament\Resources\Wallet\WalletResource::getUrl('edit', ['record' => $wallet->id])); ?>"
+                           style="flex: 1; padding: 12px; background: #6b7280; color: white; border-radius: 12px; text-align: center; text-decoration: none;">
+                            Edit
+                        </a>
+                    <?php else: ?>
+                        <a href="<?php echo e($wallet->deposit_slip ? Storage::url($wallet->deposit_slip) : '#'); ?>" 
+                        target="_blank"
+                        style="padding: 12px; background: flex #22c55e; color: white; border-radius: 8px; font-size: 12px; text-decoration: none; text-align: center; display: block; font-weight: 500;"
+                        <?php if(!$wallet->deposit_slip): ?> onclick="return false; event.preventDefault();" style="opacity: 0.7; cursor: not-allowed;" <?php endif; ?>>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($wallet->deposit_slip): ?>
+                                View Deposit Slip
+                            <?php else: ?>
+                                No Slip Available
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                        </a>
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     <button style="flex: 1; padding: 12px; background: #7c3aed; color: white; border-radius: 12px; border: none; font-weight: 500;">
                         View Details
                     </button>

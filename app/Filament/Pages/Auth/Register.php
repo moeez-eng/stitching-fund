@@ -2,186 +2,191 @@
 
 namespace App\Filament\Pages\Auth;
 
-use Filament\Schemas\Schema;
+use App\Models\User;
 use App\Models\UserInvitation;
+use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Form;
-use Filament\Schemas\Components\Component;
-use Filament\Auth\Pages\Register as BaseRegister;
 use Filament\Forms\Components\TextInput;
+use Filament\Auth\Pages\Register as BaseRegister;
 
 class Register extends BaseRegister
 {
-    protected ?UserInvitation $invitation = null;
-    protected ?array $invitationData = null;
+    // Livewire properties (must be public)
+    public ?string $invitationCode = null;
+    public ?array $invitationData = null;
+    public ?UserInvitation $invitation = null;
 
+    // Mount method to load invitation from URL
     public function mount(): void
     {
         parent::mount();
-        
-        // Check for invitation token in URL
-        $invitationCode = request('invitation');
-        
-        if ($invitationCode) {
-            Log::info('Mount method - Invitation code found:', ['invitationCode' => $invitationCode]);
 
-            $this->invitation = UserInvitation::where('unique_code', $invitationCode)
-                ->where('expires_at', '>', now())
-                ->whereNull('accepted_at')
+        $this->invitationCode = request('invitation');
+
+        if ($this->invitationCode) {
+            Log::info('Mount method - Invitation code found:', ['invitationCode' => $this->invitationCode]);
+
+            $this->invitation = UserInvitation::where('unique_code', $this->invitationCode)
                 ->first();
 
             Log::info('Mount method - Invitation query result:', ['invitation' => $this->invitation]);
-            
-            // Check if invitation exists but is already accepted or invalid
-            if ($invitationCode && !$this->invitation) {
-                $existingInvitation = UserInvitation::where('unique_code', $invitationCode)->first();
-                
-                if ($existingInvitation) {
-                    if ($existingInvitation->accepted_at) {
-                        // Invitation already used
-                        \Filament\Notifications\Notification::make()
-                            ->title('Invitation Already Used')
-                            ->body('This invitation link has already been used to register an account.')
-                            ->danger()
-                            ->send();
-                    } else {
-                        // Invitation expired (clicked but not accepted)
-                        \Filament\Notifications\Notification::make()
-                            ->title('Invitation Expired')
-                            ->body('This invitation link has already been used. Please contact your agency owner for a new invitation.')
-                            ->danger()
-                            ->send();
-                    }
-                } else {
-                    // Invalid invitation code
-                    \Filament\Notifications\Notification::make()
-                        ->title('Invalid Invitation')
-                        ->body('This invitation link is not valid.')
-                        ->danger()
-                        ->send();
-                }
-                
-                // Redirect to regular registration
-                $this->redirect(route('filament.admin.auth.register'));
-                return;
-            }
-            
+
             if ($this->invitation) {
-                // Store invitation data before deletion
-                $this->invitationData = $this->invitation->toArray();
-                
-                // Store invitation data in session to persist across form submission
-                session(['invitation_data' => $this->invitationData]);
-                
-                // Debug: Log invitation data before deletion
-                Log::info('Invitation data stored:', [
-                    'invitationData' => $this->invitationData,
-                    'invited_by_value' => $this->invitationData['invited_by'] ?? 'MISSING'
-                ]);
-                
-                // Delete invitation immediately (one-time use)
-                $this->invitation->delete();
-                
-                // Set invitation to null since it's deleted
-                $this->invitation = null;
-                
-                // Pre-fill form data with invitation details
-                $this->form->fill([
-                    'email' => $this->invitationData['email'],
-                    'role' => 'Investor'
-                ]);
-                
-                Log::info('Invitation deleted:', [
-                    'invitation_id' => $this->invitationData['id'],
-                    'email' => $this->invitationData['email']
-                ]);
+                if ($this->invitation->status === 'pending' &&
+                    $this->invitation->expires_at > now() &&
+                    !$this->invitation->accepted_at
+                ) {
+                    // Store invitation data
+                    $this->invitationData = $this->invitation->toArray();
+
+                    // Prefill form fields
+                    $this->form->fill([
+                        'email' => $this->invitationData['email'],
+                        'role' => 'Investor',
+                        'status' => 'active',
+                        'invited_by' => $this->invitationData['invited_by']
+                    ]);
+
+                    Log::info('Pending invitation found and form pre-filled:', [
+                        'invitation_id' => $this->invitationData['id'],
+                        'invited_by' => $this->invitationData['invited_by'],
+                        'email' => $this->invitationData['email']
+                    ]);
+                } else {
+                    $this->handleInvalidOrUsedInvitation($this->invitationCode);
+                }
+            } else {
+                $this->handleInvalidOrUsedInvitation($this->invitationCode);
             }
         } else {
-            // Direct registration - set default role
+            // Direct registration for Agency Owner
             $this->form->fill([
-                'role' => 'Agency Owner'
+                'role' => 'Agency Owner',
+                'status' => 'inactive'
             ]);
         }
     }
 
+    // Show notification & redirect if invitation invalid
+    protected function handleInvalidOrUsedInvitation(string $invitationCode): void
+    {
+        $invitation = UserInvitation::where('unique_code', $invitationCode)->first();
+        $message = 'Invalid invitation code.';
+
+        if ($invitation) {
+            if ($invitation->accepted_at || $invitation->status === 'accepted') {
+                $message = 'This invitation has already been used.';
+            } elseif ($invitation->expires_at < now()) {
+                $message = 'This invitation has expired.';
+                $invitation->update(['status' => 'expired']);
+            } elseif ($invitation->status !== 'pending') {
+                $message = 'This invitation is no longer valid.';
+            }
+        }
+
+        \Filament\Notifications\Notification::make()
+            ->title('Invitation Not Valid')
+            ->body($message)
+            ->danger()
+            ->send();
+
+        $this->redirect(route('filament.admin.auth.register'));
+    }
+
+    // Form fields
     public function form(Schema $schema): Schema
     {
-        // Check if this is an invitation registration by directly checking the URL parameter
-        $invitationCode = request('invitation');
-        $isInvitation = !empty($invitationCode) && 
-                       UserInvitation::where('unique_code', $invitationCode)
-                                   ->whereNull('accepted_at')
-                                   ->where('expires_at', '>', now())
-                                   ->exists();
-        
-        // Debug: Log the invitation status
+        $invitation = $this->invitation;
+        $isInvitation = ! empty($invitation);
+
         Log::info('Form method - Invitation status:', [
             'isInvitation' => $isInvitation,
-            'invitationCode' => $invitationCode
+            'invitationCode' => $this->invitationCode,
+            'invited_by' => $invitation->invited_by ?? null
         ]);
-        
+
         $components = [
             $this->getNameFormComponent(),
-            
+
             $this->getEmailFormComponent()
                 ->disabled($isInvitation)
-                ->dehydrated(true), // Ensure value is included even when disabled
-            
+                ->dehydrated(true),
+
             $this->getPasswordFormComponent(),
-            
+
             $this->getPasswordConfirmationFormComponent(),
-            
+
             TextInput::make('role')
                 ->label('Role')
                 ->default($isInvitation ? 'Investor' : 'Agency Owner')
-                ->disabled(true) // Always disabled
-                ->dehydrated(true) // Ensure value is included even when disabled
+                ->disabled(true)
+                ->dehydrated(true)
                 ->required()
-                ->helperText($isInvitation 
-                    ? 'You are registering as an Investor via invitation link.' 
+                ->helperText($isInvitation
+                    ? 'You are registering as an Investor via invitation link.'
                     : 'You are registering as an Agency Owner.'),
         ];
+
+        // Add hidden invited_by field for invitation
+        if ($isInvitation) {
+            $components[] = TextInput::make('invited_by')
+                ->default($invitation->invited_by)
+                ->hidden()
+                ->dehydrated(true);
+        }
 
         return $schema
             ->schema($components)
             ->statePath('data');
     }
 
+    // Before user is created, merge invitation data
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Get invitation data from session if not available in property
-        if (!$this->invitationData && session('invitation_data')) {
-            $this->invitationData = session('invitation_data');
-            Log::info('Retrieved invitation data from session:', ['invitationData' => $this->invitationData]);
-        }
-        
-        // Ensure role is set correctly based on invitation
         if ($this->invitationData) {
-            $data['role'] = 'Investor';
-            $data['email'] = $this->invitationData['email'];
-            // Set agency owner ID from invitation
-            $data['agency_owner_id'] = $this->invitationData['invited_by'];
-            
-            // Debug: Log invitation data and agency owner ID
-            Log::info('Invitation data:', ['invitationData' => $this->invitationData]);
-            Log::info('Setting agency_owner_id:', ['agency_owner_id' => $this->invitationData['invited_by']]);
-            
-            // Clear session data after use
-            session()->forget('invitation_data');
-        } else {
-            $data['role'] = 'Agency Owner';
+            return array_merge($data, [
+                'email' => $this->invitationData['email'],
+                'role' => 'Investor',
+                'status' => 'active',
+                'invited_by' => $this->invitationData['invited_by'] ?? null,
+                'company_name' => $this->invitationData['company_name'] ?? null,
+            ]);
         }
-        
-        // Set new user status to inactive, except Super Admin
-        if ($data['role'] === 'Super Admin') {
-            $data['status'] = 'active';
-        } else {
-            $data['status'] = 'inactive';
+
+        return array_merge($data, [
+            'role' => 'Agency Owner',
+            'status' => 'inactive'
+        ]);
+    }
+
+    // Override registration to handle invited_by and mark invitation accepted
+    protected function handleRegistration(array $data): User
+    {
+        // Create user manually with invited_by
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => bcrypt($data['password']),
+            'role' => $data['role'],
+            'status' => $data['status'] ?? 'inactive', // Add default status
+            'invited_by' => $this->invitationData['invited_by'],
+            'company_name' => $data['company_name'] ?? null,
+        ]);
+        Log::info('Registration data:', [
+        'data' => $data,
+        'invitation' => $this->invitation ? $this->invitation->toArray() : null
+        ]);
+
+        // Mark invitation accepted and link user
+        if ($this->invitation) {
+            $this->invitation->update([
+                'status' => 'accepted',
+                'accepted_at' => now(),
+                'user_id' => $user->id,
+            ]);
         }
-        
-        Log::info('Registration data before create:', $data);
-        
-        return $data;
+
+        return $user;
     }
 }

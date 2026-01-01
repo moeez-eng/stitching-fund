@@ -8,10 +8,27 @@ use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Mail\InvestorInvitationMail;
+use Illuminate\Support\Facades\Auth;
 
 class CreateUserInvitation extends CreateRecord
 {
     protected static string $resource = UserInvitationResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        // Ensure the invited_by field is set to the current user's ID
+        $userId = Auth::id();
+        $data['invited_by'] = $userId;
+        
+        // Debug: Log the data being saved
+        Log::info('Creating invitation with data:', [
+            'invited_by' => $userId,
+            'email' => $data['email'] ?? 'no-email',
+            'all_data' => $data
+        ]);
+        
+        return $data;
+    }
 
     protected function afterCreate(): void
     {

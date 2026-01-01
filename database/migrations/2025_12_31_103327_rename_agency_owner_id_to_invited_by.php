@@ -9,9 +9,12 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up(): void
+ public function up(): void
 {
     Schema::table('users', function (Blueprint $table) {
+        // First, make the column nullable if it's not already
+        $table->unsignedBigInteger('agency_owner_id')->nullable()->change();
+        
         // Drop the existing foreign key constraint
         $table->dropForeign(['agency_owner_id']);
         
@@ -29,7 +32,7 @@ return new class extends Migration
     /**
      * Reverse the migrations.
      */
-  public function down(): void
+ public function down(): void
 {
     Schema::table('users', function (Blueprint $table) {
         // Drop the foreign key constraint

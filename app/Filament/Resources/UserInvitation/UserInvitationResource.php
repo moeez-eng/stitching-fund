@@ -185,10 +185,10 @@ class UserInvitationResource extends Resource
                         }
                     })
                     ->visible(fn(?UserInvitation $record) => $record?->isValid() ?? false),
-
                 EditAction::make(),
                 DeleteAction::make(),
             ])
+            ->poll(10)
             ->bulkActions([
                 DeleteBulkAction::make(),
             ]);

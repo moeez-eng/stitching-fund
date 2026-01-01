@@ -86,22 +86,7 @@ class UsersTable
                 DeleteAction::make()
                     ->visible(fn ($record) => $record?->role !== 'Super Admin'),
             ])
-            ->toolbarActions([
-                 Action::make('refresh')
-                ->label('Refresh')
-                ->icon('heroicon-o-arrow-path')
-                ->action(fn () => null) // forces Livewire re-render
-                ->tooltip('Reload table data'),
-                BulkActionGroup::make([
-                 DeleteBulkAction::make()
-                        ->before(function ($records) {
-                            // Prevent deletion of Super Admin users
-                            $superAdminCount = $records->where('role', 'Super Admin')->count();
-                            if ($superAdminCount > 0) {
-                                throw new \Exception('Cannot delete Super Admin users');
-                            }
-                        }),
-                ]),
-            ]);
+            ->poll(10);
+           
     }
 }

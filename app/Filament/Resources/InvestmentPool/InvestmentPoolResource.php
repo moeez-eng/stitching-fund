@@ -62,7 +62,28 @@ class InvestmentPoolResource extends Resource
     public static function canViewAny(): bool
     {
         $user = Auth::user();
-        return $user && in_array($user->role, ['Super Admin', 'Agency Owner', 'Investor']);
+        
+        if (!$user) {
+            return false;
+        }
+        
+        // Additional check for investors - must have a valid inviter
+        if ($user->role === 'Investor') {
+            $hasValidInviter = $user->invited_by && 
+                             \App\Models\User::where('id', $user->invited_by)
+                                            ->where('role', 'Agency Owner')
+                                            ->exists();
+            
+            if (!$hasValidInviter) {
+                Log::warning('Investor has no valid agency owner', [
+                    'user_id' => $user->id,
+                    'invited_by' => $user->invited_by
+                ]);
+                return false;
+            }
+        }
+        
+        return in_array($user->role, ['Super Admin', 'Agency Owner', 'Investor']);
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -73,40 +94,133 @@ class InvestmentPoolResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
         $user = Auth::user();
         
-        if (!$user) {
-            return $query->whereRaw('1 = 0');
-        }
-        
-        // Super Admin sees all
+        // Debug: Log current user info
+        Log::info('Current user info', [
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'role' => $user->role,
+            'invited_by' => $user->invited_by,
+            'has_inviter' => (bool)$user->invited_by
+        ]);
+
+        $query = parent::getEloquentQuery();
+
+        // Super Admin sees all investment pools
         if ($user->role === 'Super Admin') {
+            Log::info('Admin access - showing all pools');
             return $query;
         }
-        
-        // Agency Owner sees their own investment pools
+
+        // Agency Owner sees only their own investment pools
         if ($user->role === 'Agency Owner') {
+            Log::info('Agency Owner access - showing pools for user_id: ' . $user->id);
+            
+            // Ensure the user can only see their own pools
             return $query->where('user_id', $user->id);
         }
-        
-        // Investor sees investment pools from their referenced agency owner
+
+        // Investor sees investment pools from their inviter (Agency Owner)
         if ($user->role === 'Investor') {
-            // Get the agency owner for this investor
-            $agencyOwnerId = $user->agency_owner_id;
+            $invitedBy = $user->invited_by;
             
-            if ($agencyOwnerId) {
-                // Show investment pools belonging to the investor's agency owner
-                return $query->where('user_id', $agencyOwnerId);
+            Log::info('Investor access check', [
+                'investor_id' => $user->id,
+                'invited_by' => $invitedBy,
+                'has_inviter' => (bool)$invitedBy
+            ]);
+            
+            if ($invitedBy) {
+                // Verify the inviter is an Agency Owner
+                $inviter = \App\Models\User::find($invitedBy);
+                
+                if ($inviter && $inviter->role === 'Agency Owner') {
+                    // Debug the query
+                    $poolCount = $query->where('user_id', $invitedBy)
+                                     ->where('status', 'active') // Only show active pools
+                                     ->count();
+                    
+                    Log::info('Investor pool access', [
+                        'pools_found' => $poolCount,
+                        'query' => $query->where('user_id', $invitedBy)->toSql(),
+                        'bindings' => $query->getBindings()
+                    ]);
+                    
+                    // Show active investment pools belonging to the investor's inviter
+                    return $query->where('user_id', $invitedBy)
+                               ->where('status', 'active');
+                } else {
+                    Log::warning('Investor has invalid inviter', [
+                        'investor_id' => $user->id,
+                        'inviter_id' => $invitedBy,
+                        'inviter_role' => $inviter ? $inviter->role : 'not_found'
+                    ]);
+                }
             }
             
-            // If no agency owner assigned, show nothing
-            return $query->whereRaw('1 = 0');
+            // If no valid inviter, show nothing
+            Log::warning('Investor has no valid inviter assigned', ['user_id' => $user->id]);
+            return $query->whereNull('id');
         }
-        
-        return $query->whereRaw('1 = 0');
+
+        // Default: show nothing for unauthorized roles
+        Log::warning('Unauthorized access attempt', [
+            'user_id' => $user->id,
+            'role' => $user->role
+        ]);
+        return $query->whereNull('id');
     }
 
+ public static function canView($record): bool
+{
+    $user = Auth::user();
+    if (!$user) {
+        Log::warning('No authenticated user');
+        return false;
+    }
+    
+    // Debug log
+    Log::info('canView check', [
+        'user_id' => $user->id,
+        'user_role' => $user->role,
+        'record_user_id' => $record->user_id,
+        'user_invited_by' => $user->invited_by,
+        'record_status' => $record->status
+    ]);
+
+    // Super Admin can view all active pools
+    if ($user->role === 'Super Admin') {
+        $canView = $record->status === 'active';
+        Log::info('Super Admin access', ['can_view' => $canView]);
+        return $canView;
+    }
+    
+    // Agency Owner can view their own active pools
+    if ($user->role === 'Agency Owner' && $record->user_id === $user->id) {
+        $canView = $record->status === 'active';
+        Log::info('Agency Owner access', ['can_view' => $canView]);
+        return $canView;
+    }
+    
+    // Investor can view active pools from their inviter
+    if ($user->role === 'Investor' && $user->invited_by === $record->user_id) {
+        $canView = $record->status === 'active';
+        Log::info('Investor access', [
+            'can_view' => $canView,
+            'invited_by_matches' => $user->invited_by === $record->user_id,
+            'pool_status_ok' => $record->status === 'active'
+        ]);
+        return $canView;
+    }
+    
+    Log::warning('Access denied', [
+        'user_id' => $user->id,
+        'role' => $user->role,
+        'reason' => 'No matching access rule'
+    ]);
+    return false;
+}
     public static function canEdit($record): bool
     {
         $user = Auth::user();

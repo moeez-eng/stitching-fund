@@ -6,30 +6,43 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+    public function up()
     {
-        Schema::create('user_invitations', function (Blueprint $table) {
-            $table->id();
-            $table->string('email');
-            $table->string('token')->unique();
-            $table->enum('role', ['Investor']);
-            $table->foreignId('invited_by')->constrained('users');
-            $table->string('company_name');
-            $table->string('unique_code')->unique();
-            $table->timestamp('accepted_at')->nullable();
-            $table->timestamp('expires_at');
-            $table->timestamps();
+        Schema::table('user_invitations', function (Blueprint $table) {
+            // Add status column if it doesn't exist
+            if (!Schema::hasColumn('user_invitations', 'status')) {
+                $table->enum('status', ['pending', 'accepted', 'expired'])->default('pending')->after('expires_at');
+            }
+            
+            // Add user_id to track which user accepted the invitation
+            if (!Schema::hasColumn('user_invitations', 'user_id')) {
+                $table->foreignId('user_id')
+                    ->nullable()
+                    ->constrained('users')
+                    ->nullOnDelete()
+                    ->after('invited_by');
+            }
+
+            // Make accepted_at nullable if it's not already
+            if (Schema::hasColumn('user_invitations', 'accepted_at')) {
+                Schema::table('user_invitations', function (Blueprint $table) {
+                    $table->timestamp('accepted_at')->nullable()->change();
+                });
+            }
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('user_invitations');
+        Schema::table('user_invitations', function (Blueprint $table) {
+            if (Schema::hasColumn('user_invitations', 'status')) {
+                $table->dropColumn('status');
+            }
+            
+            if (Schema::hasColumn('user_invitations', 'user_id')) {
+                $table->dropForeign(['user_id']);
+                $table->dropColumn('user_id');
+            }
+        });
     }
 };

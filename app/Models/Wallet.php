@@ -64,8 +64,6 @@ class Wallet extends Model
         return (float)($this->allocations()->sum('amount') ?? 0);
     }
 
-   
-
     public function getWalletStatusAttribute()
     {
         $balance = floatval($this->available_balance ?? 0);

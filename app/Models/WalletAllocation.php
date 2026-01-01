@@ -21,9 +21,23 @@ class WalletAllocation extends Model
     ];
 
     protected static function booted()
-    {
-        // No notification logic - keeping it simple
-    }
+{
+    static::saved(function ($allocation) {
+        // Update the wallet's available balance
+        $wallet = $allocation->wallet;
+        if ($wallet) {
+            $wallet->touch(); // This will update the updated_at timestamp
+        }
+    });
+    
+    static::deleted(function ($allocation) {
+        // Update the wallet's available balance when an allocation is deleted
+        $wallet = $allocation->wallet;
+        if ($wallet) {
+            $wallet->touch(); // This will update the updated_at timestamp
+        }
+    });
+}
 
     public function wallet()
     {

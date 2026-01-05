@@ -297,6 +297,7 @@ class InvestmentPoolForm
                                 TextInput::make('investment_percentage')
                                     ->label('Investment Percentage')
                                     ->disabled()
+                                    ->dehydrated()
                                     ->numeric()
                                     ->suffix('%')
                                     ->required()

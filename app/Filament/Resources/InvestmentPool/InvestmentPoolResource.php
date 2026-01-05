@@ -222,20 +222,29 @@ class InvestmentPoolResource extends Resource
             Log::info('Setting design_name to: ' . $designName);
         }
 
-        // Process partners data to include investment_percentage
+        // Process partners data to include investment_percentage and calculate totals
         if (isset($data['partners']) && is_array($data['partners'])) {
             $amountRequired = $data['amount_required'] ?? 0;
+            $totalCollected = 0;
             Log::info('Processing partners with amount_required: ' . $amountRequired);
             
-            $data['partners'] = collect($data['partners'])->map(function ($partner) use ($amountRequired) {
+            $data['partners'] = collect($data['partners'])->map(function ($partner) use ($amountRequired, &$totalCollected) {
                 if (isset($partner['investment_amount']) && $amountRequired > 0) {
-                    $partner['investment_percentage'] = round(($partner['investment_amount'] / $amountRequired) * 100);
-                    Log::info('Partner percentage calculated: ' . $partner['investment_percentage']);
+                    $partner['investment_percentage'] = round(($partner['investment_amount'] / $amountRequired) * 100, 2);
+                    $totalCollected += floatval($partner['investment_amount']);
+                    Log::info('Partner percentage calculated: ' . $partner['investment_percentage'] . ', amount: ' . $partner['investment_amount']);
                 } else {
                     $partner['investment_percentage'] = 0;
                 }
                 return $partner;
             })->toArray();
+            
+            // Set calculated totals
+            $data['total_collected'] = $totalCollected;
+            $data['percentage_collected'] = $amountRequired > 0 ? min(100, round(($totalCollected / $amountRequired) * 100, 2)) : 0;
+            $data['remaining_amount'] = max(0, $amountRequired - $totalCollected);
+            
+            Log::info('Calculated totals - collected: ' . $totalCollected . ', percentage: ' . $data['percentage_collected'] . ', remaining: ' . $data['remaining_amount']);
         }
 
         Log::info('Final data before save: ', $data);

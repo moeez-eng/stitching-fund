@@ -39,8 +39,7 @@ class InvestmentPoolTable
                     ->color('primary')
                     ->sortable(),
 
-                // Custom Lat Summary Column
-               
+
                 TextColumn::make('total_collected')
                     ->label('Total Collected')
                     ->money('PKR')

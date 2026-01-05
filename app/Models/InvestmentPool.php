@@ -15,6 +15,9 @@ class InvestmentPool extends Model
         'amount_required',
         'number_of_partners',
         'total_collected',
+        'percentage_collected',
+        'remaining_amount',
+        'partners',
         'status',
         'user_id',
     ];
@@ -28,6 +31,7 @@ class InvestmentPool extends Model
         'amount_required' => 'decimal:2',
         'total_collected' => 'decimal:2',
         'number_of_partners' => 'integer',
+        'partners' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -44,8 +48,33 @@ class InvestmentPool extends Model
                 $investmentPool->status = self::STATUS_OPEN;
             }
             
-            if (empty($investmentPool->total_collected)) {
+            // Calculate total_collected from partners
+            if (isset($investmentPool->partners)) {
+                $partners = $investmentPool->partners;
+                    
+                if (is_array($partners)) {
+                    $totalCollected = 0;
+                    foreach ($partners as $partner) {
+                        if (isset($partner['investment_amount'])) {
+                            $totalCollected += floatval($partner['investment_amount']);
+                        }
+                    }
+                    $investmentPool->total_collected = $totalCollected;
+                    
+                    // Calculate percentage_collected
+                    if ($investmentPool->amount_required > 0) {
+                        $investmentPool->percentage_collected = min(100, round(($totalCollected / $investmentPool->amount_required) * 100, 2));
+                    } else {
+                        $investmentPool->percentage_collected = 0;
+                    }
+                    
+                    // Calculate remaining_amount
+                    $investmentPool->remaining_amount = max(0, $investmentPool->amount_required - $totalCollected);
+                }
+            } else {
                 $investmentPool->total_collected = 0;
+                $investmentPool->percentage_collected = 0;
+                $investmentPool->remaining_amount = $investmentPool->amount_required ?? 0;
             }
             
             // Ensure design_name is set from lat_id if not provided
@@ -54,25 +83,42 @@ class InvestmentPool extends Model
             }
 
             // Check if all investors have wallets
-            if (isset($investmentPool->partners)) {
-                $partners = is_string($investmentPool->partners) 
-                    ? json_decode($investmentPool->partners, true) 
-                    : $investmentPool->partners;
-                    
-                if (is_array($partners)) {
-                    foreach ($partners as $partner) {
-                        if (isset($partner['investor_id'])) {
-                            $investor = \App\Models\User::find($partner['investor_id']);
-                            if (!$investor) {
-                                throw new \Exception("Investor with ID {$partner['investor_id']} not found.");
-                            }
-                            $wallet = \App\Models\Wallet::where('investor_id', $investor->id)->first();
-                            if (!$wallet) {
-                                throw new \Exception("Investor '{$investor->name}' (ID: {$investor->id}) does not have a wallet. Please create a wallet for this investor first.");
-                            }
+            if (isset($investmentPool->partners) && is_array($investmentPool->partners)) {
+                foreach ($investmentPool->partners as $partner) {
+                    if (isset($partner['investor_id'])) {
+                        $investor = \App\Models\User::find($partner['investor_id']);
+                        if (!$investor) {
+                            throw new \Exception("Investor with ID {$partner['investor_id']} not found.");
+                        }
+                        $wallet = \App\Models\Wallet::where('investor_id', $investor->id)->first();
+                        if (!$wallet) {
+                            throw new \Exception("Investor '{$investor->name}' (ID: {$investor->id}) does not have a wallet. Please create a wallet for this investor first.");
                         }
                     }
                 }
+            }
+        });
+        
+        static::updating(function ($investmentPool) {
+            // Recalculate totals when partners are updated
+            if (isset($investmentPool->partners) && is_array($investmentPool->partners)) {
+                $totalCollected = 0;
+                foreach ($investmentPool->partners as $partner) {
+                    if (isset($partner['investment_amount'])) {
+                        $totalCollected += floatval($partner['investment_amount']);
+                    }
+                }
+                $investmentPool->total_collected = $totalCollected;
+                
+                // Calculate percentage_collected
+                if ($investmentPool->amount_required > 0) {
+                    $investmentPool->percentage_collected = min(100, round(($totalCollected / $investmentPool->amount_required) * 100, 2));
+                } else {
+                    $investmentPool->percentage_collected = 0;
+                }
+                
+                // Calculate remaining_amount
+                $investmentPool->remaining_amount = max(0, $investmentPool->amount_required - $totalCollected);
             }
         });
     }

@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\WalletAllocation;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Wallet extends Model
 {
@@ -48,16 +50,13 @@ class Wallet extends Model
         return $this->belongsTo(User::class, 'agency_owner_id');
     }
 
-    public function allocations()
+    public function allocations(): HasMany
     {
-        return $this->hasMany(WalletAllocation::class, 'wallet_id');
+        return $this->hasMany(WalletAllocation::class);
     }
-
-        public function getAvailableBalanceAttribute()
+    public function getAvailableBalanceAttribute(): float
     {
-        $totalDeposited = (float)($this->amount ?? 0);
-        $totalAllocated = (float)($this->allocations()->sum('amount') ?? 0);
-        return max(0, $totalDeposited - $totalAllocated);
+        return (float)$this->balance - $this->allocated_balance;
     }
     public function getTotalInvestedAttribute()
     {
@@ -75,5 +74,15 @@ class Wallet extends Model
         } else {
             return ['status' => 'healthy', 'color' => 'success', 'text' => 'Healthy Balance'];
         }
+    }
+    public function canAllocate(float $amount): bool
+    {
+        return $this->available_balance >= $amount;
+    }
+    public function getAllocatedBalanceAttribute(): float
+    {
+        return (float)$this->allocations()
+            ->whereIn('status', ['invested', 'pending'])
+            ->sum('amount');
     }
 }

@@ -2,15 +2,8 @@
 
 namespace App\Filament\Resources\InvestmentPool;
 
-use App\Filament\Resources\InvestmentPool\Tables\InvestmentPoolTable;
-use Filament\Schemas\Components\Placeholder;
-use App\Filament\Resources\InvestmentPool\Pages\ViewInvestmentPool;
-use App\Filament\Resources\InvestmentPool\Pages\EditInvestmentPool;
-use App\Filament\Resources\InvestmentPool\Pages\ListInvestmentPools;
-use App\Filament\Resources\InvestmentPool\Pages\CreateInvestmentPool;
-use App\Filament\Resources\InvestmentPool\Schemas\InvestmentPoolForm;
-use BackedEnum;
 use UnitEnum;
+use BackedEnum;
 use App\Models\Lat;
 use Filament\Tables\Table;
 use Filament\Schemas\Schema;
@@ -20,9 +13,17 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\Facades\Log;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Schemas\Components\Section;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Placeholder;
+use App\Filament\Resources\InvestmentPool\Pages\EditInvestmentPool;
+use App\Filament\Resources\InvestmentPool\Pages\ViewInvestmentPool;
+use App\Filament\Resources\InvestmentPool\Pages\ListInvestmentPools;
+use App\Filament\Resources\InvestmentPool\Pages\CreateInvestmentPool;
+use App\Filament\Resources\InvestmentPool\Schemas\InvestmentPoolForm;
+use App\Filament\Resources\InvestmentPool\Tables\InvestmentPoolTable;
 
 class InvestmentPoolResource extends Resource
 {
@@ -189,27 +190,29 @@ class InvestmentPoolResource extends Resource
         'record_status' => $record->status
     ]);
 
-    // Super Admin can view all active pools
+    // Super Admin can view all pools regardless of status
     if ($user->role === 'Super Admin') {
-        $canView = $record->status === 'active';
-        Log::info('Super Admin access', ['can_view' => $canView]);
+        $canView = true;
+        Log::info('Super Admin access - viewing pool', ['pool_id' => $record->id, 'status' => $record->status]);
         return $canView;
     }
     
-    // Agency Owner can view their own active pools
+    // Agency Owner can view their own pools regardless of status
     if ($user->role === 'Agency Owner' && $record->user_id === $user->id) {
-        $canView = $record->status === 'active';
-        Log::info('Agency Owner access', ['can_view' => $canView]);
+        $canView = true;
+        Log::info('Agency Owner access - viewing pool', ['user_id' => $user->id, 'pool_id' => $record->id, 'status' => $record->status]);
         return $canView;
     }
     
-    // Investor can view active pools from their inviter
+    // Investor can view pools from their inviter regardless of status
     if ($user->role === 'Investor' && $user->invited_by === $record->user_id) {
-        $canView = $record->status === 'active';
-        Log::info('Investor access', [
-            'can_view' => $canView,
-            'invited_by_matches' => $user->invited_by === $record->user_id,
-            'pool_status_ok' => $record->status === 'active'
+        $canView = true;
+        Log::info('Investor access - viewing pool', [
+            'investor_id' => $user->id,
+            'pool_id' => $record->id,
+            'status' => $record->status,
+            'invited_by' => $user->invited_by,
+            'pool_owner' => $record->user_id
         ]);
         return $canView;
     }
@@ -291,4 +294,24 @@ class InvestmentPoolResource extends Resource
         Log::info('Final data before save: ', $data);
         return $data;
     }
+    protected function handleRecordUpdate(Model $record, array $data): Model
+{
+    $record->update($data);
+    
+    // Sync investors if they exist in the request
+    if (isset($data['partners'])) {
+        $investors = collect($data['partners'])->mapWithKeys(function ($partner) {
+            return [
+                $partner['investor_id'] => [
+                    'investment_amount' => $partner['investment_amount'],
+                    'investment_percentage' => $partner['investment_percentage']
+                ]
+            ];
+        })->toArray();
+        
+        $record->investors()->sync($investors);
+    }
+    
+    return $record;
+}
 }

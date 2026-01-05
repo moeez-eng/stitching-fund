@@ -309,7 +309,7 @@ class InvestmentPoolResource extends Resource
                 if ($inviter && $inviter->role === 'Agency Owner') {
                     // Debug the query
                     $poolCount = $query->where('user_id', $invitedBy)
-                                     ->where('status', 'active') // Only show active pools
+                                     ->whereIn('status', ['open', 'active']) // Show open and active pools
                                      ->count();
                     
                     Log::info('Investor pool access', [
@@ -318,9 +318,9 @@ class InvestmentPoolResource extends Resource
                         'bindings' => $query->getBindings()
                     ]);
                     
-                    // Show active investment pools belonging to the investor's inviter
+                    // Show open and active investment pools belonging to the investor's inviter
                     return $query->where('user_id', $invitedBy)
-                               ->where('status', 'active');
+                               ->whereIn('status', ['open', 'active']);
                 } else {
                     Log::warning('Investor has invalid inviter', [
                         'investor_id' => $user->id,
@@ -351,9 +351,6 @@ class InvestmentPoolResource extends Resource
         
         // Process wallet allocations if partners exist in the request
         if (isset($data['partners'])) {
-            // First, delete any existing wallet allocations for this pool
-            \App\Models\WalletAllocation::where('investment_pool_id', $record->id)->delete();
-            
             foreach ($data['partners'] as $partner) {
                 if (empty($partner['investor_id']) || empty($partner['investment_amount'])) {
                     continue;
@@ -363,6 +360,14 @@ class InvestmentPoolResource extends Resource
                 $wallet = \App\Models\Wallet::where('investor_id', $partner['investor_id'])->first();
                 
                 if ($wallet) {
+                    // Check if wallet has sufficient balance
+                    if ($wallet->amount < $partner['investment_amount']) {
+                        throw new \Exception("Insufficient funds in wallet for investor '{$partner['investor_id']}'. Available: PKR {$wallet->amount}, Required: PKR {$partner['investment_amount']}");
+                    }
+                    
+                    // Deduct from wallet
+                    $wallet->decrement('amount', $partner['investment_amount']);
+                    
                     // Create the wallet allocation
                     \App\Models\WalletAllocation::create([
                         'wallet_id' => $wallet->id,

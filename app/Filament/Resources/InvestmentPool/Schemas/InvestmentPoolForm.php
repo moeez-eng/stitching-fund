@@ -29,9 +29,9 @@ class InvestmentPoolForm
                 ? Lat::where('user_id', $user->agency_owner_id)
                 : Lat::where('user_id', $user->id);
                 
-            // Get all available LATs and the latest one
+            // Get all available LATs and latest one
             $availableLats = $query->pluck('lat_no', 'id')->toArray();
-            $latestLat = $query->latest('id')->first();
+            $latestLat = $query->orderBy('id', 'desc')->first();
             $latestLatId = $latestLat ? $latestLat->id : null;
         }
         
@@ -180,7 +180,6 @@ class InvestmentPoolForm
                                     ->searchable()
                                     ->preload()
                                     ->reactive()
-                                    ->getOptionLabelUsing(fn ($value): ?string => \App\Models\User::find($value)?->name)
                                     ->afterStateHydrated(function (callable $set, $state) {
                                         if ($state) {
                                             $investor = \App\Models\User::find($state);

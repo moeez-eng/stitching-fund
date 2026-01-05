@@ -79,10 +79,10 @@ class Lat extends Model
         return $this->hasMany(Expense::class, 'lat_id');
     }
 
-    public function investmentPool()
-    {
-        return $this->hasOne(InvestmentPool::class);
-    }
+   public function investmentPools()
+{
+    return $this->hasMany(\App\Models\InvestmentPool::class, 'lat_id');
+}
 
     public function summary()
     {

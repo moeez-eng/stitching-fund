@@ -1,197 +1,273 @@
+// resources/views/filament/wallet/pages/list-wallets.blade.php
+
+@php
+    use App\Models\InvestmentPool;
+    use Illuminate\Support\Facades\Auth;
+@endphp
+
 <x-filament-panels::page>
     @php
         $wallets = $this->getWalletData();
         $user = Auth::user();
+        $pools = InvestmentPool::where('status', 'open')->get();
     @endphp
 
-    @if(!$wallets || (is_array($wallets) && empty($wallets)) || (!is_array($wallets) && $wallets->isEmpty()))
-        <div class="text-center py-12">
-            <div class="text-6xl mb-4">💼</div>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">No Wallet Found</h3>
-            <p class="text-gray-600 mb-6">Contact your agency owner to create your investment wallet.</p>
-            @if($user->role === 'Agency Owner')
-                <button onclick="window.location.href='{{ \App\Filament\Resources\Wallet\WalletResource::getUrl('create') }}" 
-                        class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                    Create Wallet
+    <!-- Existing wallet list code remains the same until the Invest button -->
+
+    <!-- Replace the existing Invest button with this modal trigger -->
+    <button onclick="openInvestModal({{ $wallet->id }}, {{ $wallet->available_balance }})" 
+            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+        📊 Invest
+    </button>
+
+    <!-- Add this modal at the bottom of the file, before the closing x-filament-panels::page tag -->
+    <div id="investModal" 
+         class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold">Invest in Pool</h3>
+                <button onclick="closeInvestModal()" class="text-gray-500 hover:text-gray-700">
+                    &times;
                 </button>
-            @endif
-        </div>
-    @else
-        @php
-            $walletCollection = is_array($wallets) ? collect($wallets) : $wallets;
-        @endphp
-        
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-        @foreach($walletCollection as $wallet)
-            @php
-                $availableBalance = $wallet->available_balance;
-                $totalInvested = $wallet->total_invested;
-                $walletStatus = $wallet->wallet_status;
-                $userName = $wallet->investor->name ?? 'Unknown Investor';
-                $userEmail = $wallet->investor->email ?? '';
-            @endphp
-            
-            <div style="width: 100%; border-radius: 20px; background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.1); overflow: hidden;">
-                <div style="padding: 24px; display: flex; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <div style="width: 56px; height: 56px; border-radius: 50%; background: #7c3aed; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold;">
-                            {{ strtoupper(substr($userName, 0, 1)) }}
-                        </div>
-                        <div>
-                            <div style="font-weight: 600; font-size: 20px; color: #7c3aed;">{{ $userName }}</div>
-                            <div style="color: #6b7280; font-size: 14px;">{{ $wallet->agencyOwner->name ?? 'ABC Agency' }}</div>
-                        </div>
-                    </div>
-                    <span style="padding: 8px 16px; border-radius: 9999px; background: {{ $walletStatus['status'] === 'healthy' ? '#22c55e' : ($walletStatus['status'] === 'low' ? '#eab308' : '#ef4444') }}20; color: {{ $walletStatus['status'] === 'healthy' ? '#22c55e' : ($walletStatus['status'] === 'low' ? '#eab308' : '#ef4444') }}; font-weight: bold; font-size: 13px;">
-                        {{ strtoupper($walletStatus['status']) }}
-                    </span>
+            </div>
+
+            <form id="investmentForm">
+                @csrf
+                <input type="hidden" name="wallet_id" id="walletId">
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Select Pool</label>
+                    <select name="pool_id" id="poolSelect" 
+                            class="w-full border border-gray-300 rounded-md p-2" 
+                            onchange="updatePoolInfo()" required>
+                        <option value="">Select a pool</option>
+                        @foreach($pools as $pool)
+                            <option value="{{ $pool->id }}" 
+                                    data-required="{{ $pool->amount_required }}"
+                                    data-collected="{{ $pool->collected_amount }}"
+                                    data-remaining="{{ $pool->remaining_amount }}">
+                                {{ $pool->name }} ({{ number_format($pool->remaining_amount) }} PKR remaining)
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
-                <div style="padding: 0 24px 32px;">
-                    <div style="text-align: center; margin-bottom: 32px;">
-                        <div style="color: #6b7280; font-size: 15px;">Available Balance</div>
-                        <div style="font-size: 52px; font-weight: 800; color: #7c3aed;"> {{ number_format($availableBalance, 0) }}</div>
-                        <div style="color: #22c55e; font-size: 15px; margin-top: 8px;">↑ +12.5% this month</div>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; margin-bottom: 16px;">
-                        <div style="background: rgba(124, 58, 237, 0.1); padding: 16px; border-radius: 12px;">
-                            <div style="color: #6b7280; font-size: 13px;">Deposited</div>
-                            <div style="font-weight: bold; font-size: 20px; color: #22c55e;">PKR {{ number_format($wallet->amount, 0) }}</div>
-                        </div>
-                        <div style="background: rgba(124, 58, 237, 0.1); padding: 16px; border-radius: 12px;">
-                            <div style="color: #6b7280; font-size: 13px;">Invested</div>
-                            <div style="font-weight: bold; font-size: 20px; color: #22c55e;">PKR {{ number_format($totalInvested, 0) }}</div>
-                        </div>
-                        <div style="background: rgba(16, 185, 129, 0.1); padding: 16px; border-radius: 12px;">
-                            <div style="color: #6b7280; font-size: 13px;">Pool Balance</div>
-                            <div style="font-weight: bold; font-size: 20px; color: #10b981;">PKR {{ number_format($wallet->pool_balance ?? 0, 0) }}</div>
-                        </div>
-                    </div>
-
-                    @php
-                        $poolPercentage = $wallet->pool_balance ? min(100, ($wallet->pool_balance / $wallet->amount) * 100) : 0;
-                    @endphp
-                    <div style="margin-bottom: 16px;
-                                background: rgba(124, 58, 237, 0.1);
-                                border-radius: 10px;
-                                height: 10px;
-                                width: 100%;">
-                        <div style="height: 100%;
-                                width: {{ $poolPercentage }}%;
-                                background: linear-gradient(90deg, #8b5cf6, #7c3aed);
-                                border-radius: 10px;
-                                transition: width 0.5s ease-in-out;">
-                        </div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 12px; color: #6b7280;">
-                        <span>Pool Progress</span>
-                        <span>{{ number_format($poolPercentage, 1) }}%</span>
-                    </div>
-
-                    <!-- Investment Pool Section -->
-                    <div style="background: rgba(124, 58, 237, 0.08); padding: 16px; border-radius: 12px; margin-top: 20px; margin-bottom: 16px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <div style="color: #6b7280; font-size: 12px; margin-bottom: 4px;">Current Investment Pool</div>
-                                <div style="font-size: 24px; font-weight: bold; color: #7c3aed;">PKR {{ number_format($wallet->pool_contribution ?? 0, 0) }}</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="color: #22c55e; font-size: 12px;">{{ $wallet->pool_investors ?? 1 }} investors</div>
-                                <div style="color: #6b7280; font-size: 11px;">Active Pool</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Recent Transactions -->
-                    <div style="margin-top: 20px;">
-                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                            <svg width="16" height="16" fill="#7c3aed" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
-                            </svg>
-                            Recent Activity
-                        </div>
-                        <div style="background: rgba(124, 58, 237, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <div style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"></div>
-                                    <span>Deposit from Agency</span>
-                                </div>
-                                <span style="color: #22c55e; font-weight: 600;">+PKR {{ number_format($wallet->amount, 0) }}</span>
-                            </div>
-                            <div style="color: #6b7280; font-size: 11px; margin-top: 4px;">{{ $wallet->created_at->format('M d, Y') }}</div>
-                        </div>
-                        <div style="background: rgba(124, 58, 237, 0.05); padding: 12px; border-radius: 8px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <div style="width: 8px; height: 8px; background: #7c3aed; border-radius: 50%;"></div>
-                                    <span>Pool Investment</span>
-                                </div>
-                                <span style="color: #7c3aed; font-weight: 600;">PKR {{ number_format($totalInvested, 0) }}</span>
-                            </div>
-                            <div style="color: #6b7280; font-size: 11px; margin-top: 4px;">Last month</div>
-                        </div>
-                    </div>
-
-                    <!-- Performance Metrics -->
-                    <div style="margin-top: 20px;">
-                        <div style="color: #6b7280; font-size: 12px; margin-bottom: 8px;">6-Month Performance</div>
-                        <div style="height: 60px; background: linear-gradient(135deg, #22c55e 0%, #7c3aed 100%); border-radius: 8px; position: relative; overflow: hidden;">
-                            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 40%; background: rgba(255,255,255,0.1);"></div>
-                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: bold; font-size: 14px;">
-                                +12.5% ROI
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Quick Actions - Only for Agency Owners -->
-                    @if($user->role === 'Agency Owner')
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 20px;">
-                       <a href="{{ $wallet->deposit_slip ? Storage::url($wallet->deposit_slip) : '#' }}" 
-                        target="_blank"
-                        style="padding: 12px; background: #22c55e; color: white; border-radius: 8px; font-size: 12px; text-decoration: none; text-align: center; display: block; font-weight: 500;"
-                        @if(!$wallet->deposit_slip) onclick="return false; event.preventDefault();" style="opacity: 0.7; cursor: not-allowed;" @endif>
-                            @if($wallet->deposit_slip)
-                                View Deposit Slip
-                            @else
-                                No Slip Available
-                            @endif
-                        </a>
-                        <button onclick="alert('Investment feature coming soon! This will invest available balance into the pool.')" 
-                                style="padding: 12px; background: #7c3aed; color: white; border-radius: 8px; font-size: 12px; border: none; cursor: pointer; font-weight: 500;">
-                            📊 Invest
-                        </button>
-                        <button onclick="alert('Withdrawal feature coming soon! This will allow investors to withdraw from their available balance.')" 
-                                style="padding: 12px; background: #6b7280; color: white; border-radius: 8px; font-size: 12px; border: none; cursor: pointer; font-weight: 500;">
-                            💸 Withdraw
-                        </button>
-                    </div>
-                    @endif
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Amount (PKR)
+                        <span id="maxAmount" class="text-xs text-gray-500"></span>
+                    </label>
+                    <input type="number" 
+                           name="amount" 
+                           id="investAmount"
+                           class="w-full border border-gray-300 rounded-md p-2"
+                           min="1"
+                           step="0.01"
+                           oninput="validateAmount()"
+                           required>
+                    <div id="amountError" class="text-red-500 text-xs mt-1 hidden"></div>
                 </div>
-                <div style="padding: 20px 24px; background: rgba(124, 58, 237, 0.05); display: flex; gap: 12px;">
-                    @if($user->role === 'Agency Owner')
-                        <a href="{{ \App\Filament\Resources\Wallet\WalletResource::getUrl('edit', ['record' => $wallet->id]) }}"
-                           style="flex: 1; padding: 12px; background: #6b7280; color: white; border-radius: 12px; text-align: center; text-decoration: none;">
-                            Edit
-                        </a>
-                    @else
-                        <a href="{{ $wallet->deposit_slip ? Storage::url($wallet->deposit_slip) : '#' }}" 
-                        target="_blank"
-                        style="padding: 12px; background: flex #22c55e; color: white; border-radius: 8px; font-size: 12px; text-decoration: none; text-align: center; display: block; font-weight: 500;"
-                        @if(!$wallet->deposit_slip) onclick="return false; event.preventDefault();" style="opacity: 0.7; cursor: not-allowed;" @endif>
-                            @if($wallet->deposit_slip)
-                                View Deposit Slip
-                            @else
-                                No Slip Available
-                            @endif
-                        </a>
-                    @endif
-                    <button style="flex: 1; padding: 12px; background: #7c3aed; color: white; border-radius: 12px; border: none; font-weight: 500;">
-                        View Details
+
+                <div id="poolInfo" class="bg-gray-50 p-3 rounded-md mb-4 text-sm hidden">
+                    <div class="flex justify-between mb-1">
+                        <span>Pool Target:</span>
+                        <span id="poolTarget">0 PKR</span>
+                    </div>
+                    <div class="flex justify-between mb-1">
+                        <span>Collected:</span>
+                        <span id="poolCollected">0 PKR</span>
+                    </div>
+                    <div class="flex justify-between font-medium">
+                        <span>Remaining:</span>
+                        <span id="poolRemaining">0 PKR</span>
+                    </div>
+                    <div class="mt-2">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div id="poolProgress" class="bg-indigo-600 h-2.5 rounded-full" 
+                                 style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" 
+                            onclick="closeInvestModal()" 
+                            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            id="submitButton"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50">
+                        Confirm Investment
                     </button>
                 </div>
-            </div>
-        @endforeach
+            </form>
         </div>
-    @endif
+    </div>
+
+    @push('scripts')
+    <script>
+        let currentWalletBalance = 0;
+        let currentPoolRemaining = 0;
+
+        function openInvestModal(walletId, availableBalance) {
+            document.getElementById('walletId').value = walletId;
+            currentWalletBalance = parseFloat(availableBalance);
+            document.getElementById('maxAmount').textContent = `(Max: ${formatCurrency(availableBalance)} PKR)`;
+            document.getElementById('investModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeInvestModal() {
+            document.getElementById('investModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            resetForm();
+        }
+
+        function updatePoolInfo() {
+            const select = document.getElementById('poolSelect');
+            const poolInfo = document.getElementById('poolInfo');
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (!selectedOption.value) {
+                poolInfo.classList.add('hidden');
+                return;
+            }
+
+            const required = parseFloat(selectedOption.dataset.required);
+            const collected = parseFloat(selectedOption.dataset.collected);
+            const remaining = parseFloat(selectedOption.dataset.remaining);
+            currentPoolRemaining = remaining;
+
+            document.getElementById('poolTarget').textContent = formatCurrency(required) + ' PKR';
+            document.getElementById('poolCollected').textContent = formatCurrency(collected) + ' PKR';
+            document.getElementById('poolRemaining').textContent = formatCurrency(remaining) + ' PKR';
+            
+            const progress = (collected / required) * 100;
+            document.getElementById('poolProgress').style.width = `${progress}%`;
+            
+            poolInfo.classList.remove('hidden');
+            validateAmount();
+        }
+
+        function validateAmount() {
+            const amountInput = document.getElementById('investAmount');
+            const amount = parseFloat(amountInput.value) || 0;
+            const errorElement = document.getElementById('amountError');
+            const submitButton = document.getElementById('submitButton');
+            let isValid = true;
+
+            if (amount <= 0) {
+                showError('Amount must be greater than zero');
+                isValid = false;
+            } else if (amount > currentWalletBalance) {
+                showError(`Amount exceeds your available balance of ${formatCurrency(currentWalletBalance)} PKR`);
+                isValid = false;
+            } else if (amount > currentPoolRemaining) {
+                showError(`Amount exceeds pool's remaining capacity of ${formatCurrency(currentPoolRemaining)} PKR`);
+                isValid = false;
+            } else {
+                hideError();
+            }
+
+            submitButton.disabled = !isValid;
+            return isValid;
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('amountError');
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('amountError').classList.add('hidden');
+        }
+
+        function resetForm() {
+            document.getElementById('investmentForm').reset();
+            document.getElementById('poolInfo').classList.add('hidden');
+            document.getElementById('amountError').classList.add('hidden');
+            currentWalletBalance = 0;
+            currentPoolRemaining = 0;
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-PK').format(amount.toFixed(2));
+        }
+
+        // Handle form submission
+        document.getElementById('investmentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!validateAmount()) return;
+            
+            const formData = new FormData(this);
+            const submitButton = document.getElementById('submitButton');
+            const originalButtonText = submitButton.innerHTML;
+            
+            submitButton.disabled = true;
+            submitButton.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+            `;
+
+            try {
+                const response = await fetch('{{ route("api.investments.store") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        wallet_id: formData.get('wallet_id'),
+                        pool_id: formData.get('pool_id'),
+                        amount: parseFloat(formData.get('amount'))
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Investment failed');
+                }
+
+                // Show success message
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg';
+                notification.textContent = 'Investment successful!';
+                document.body.appendChild(notification);
+                
+                // Close modal and refresh page after a short delay
+                setTimeout(() => {
+                    closeInvestModal();
+                    window.location.reload();
+                }, 1500);
+
+                // Remove notification
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert(error.message || 'An error occurred. Please try again.');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonText;
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('investModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeInvestModal();
+            }
+        }); 
+    </script>
+    @endpush
 </x-filament-panels::page>

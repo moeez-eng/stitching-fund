@@ -5,11 +5,12 @@ namespace App\Filament\Resources\InvestmentPool\Tables;
 use Filament\Tables;
 use Filament\Tables\Table;
 use App\Models\InvestmentPool;
-use Filament\Actions\ViewAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Actions\DeleteAction;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Auth;
+use Filament\Tables\Columns\TextColumn;
 
 class InvestmentPoolTable
 {
@@ -17,22 +18,22 @@ class InvestmentPoolTable
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('lat.lat_no')
+                TextColumn::make('lat.lat_no')
                     ->label('Lot Number')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('design_name')
+                TextColumn::make('design_name')
                     ->label('Design Name')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('amount_required')
+                TextColumn::make('amount_required')
                     ->label('Amount Required')
                     ->money('PKR')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('number_of_partners')
+                TextColumn::make('number_of_partners')
                     ->label('Partners')
                     ->badge()
                     ->color('primary')
@@ -40,12 +41,12 @@ class InvestmentPoolTable
 
                 // Custom Lat Summary Column
                
-                Tables\Columns\TextColumn::make('total_collected')
+                TextColumn::make('total_collected')
                     ->label('Total Collected')
                     ->money('PKR')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('percentage_collected')
+                TextColumn::make('percentage_collected')
                     ->label('Collected %')
                     ->badge()
                     ->color(fn (InvestmentPool $record): string => 
@@ -55,7 +56,7 @@ class InvestmentPoolTable
                     ->formatStateUsing(fn ($state) => number_format($state, 2) . '%')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('remaining_amount')
+                TextColumn::make('remaining_amount')
                     ->label('Remaining')
                     ->money('PKR')
                     ->sortable()
@@ -63,7 +64,7 @@ class InvestmentPoolTable
                         $record->remaining_amount > 0 ? 'warning' : 'success'
                     ),
                
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('Created')
                     ->dateTime()
                     ->sortable()

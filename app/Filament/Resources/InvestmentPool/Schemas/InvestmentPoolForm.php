@@ -5,18 +5,36 @@ namespace App\Filament\Resources\InvestmentPool\Schemas;
 use App\Models\Lat;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Illuminate\Support\Str;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Hidden;
-use Illuminate\Support\Facades\Auth;
 
 class InvestmentPoolForm
 {
     public static function configure(Schema $schema): Schema
     {
+        // Get available LATs for the current user
+        $user = Auth::user();
+        $availableLats = [];
+        $latestLatId = null;
+        
+        if ($user) {
+            $query = $user->role === 'Investor' && $user->agency_owner_id
+                ? Lat::where('user_id', $user->agency_owner_id)
+                : Lat::where('user_id', $user->id);
+                
+            // Get all available LATs and the latest one
+            $availableLats = $query->pluck('lat_no', 'id')->toArray();
+            $latestLat = $query->latest('id')->first();
+            $latestLatId = $latestLat ? $latestLat->id : null;
+        }
+        
         return $schema
             ->schema([
                 Hidden::make('user_id')
@@ -73,27 +91,33 @@ class InvestmentPoolForm
                     ->schema([
                         Select::make('lat_id')
                             ->label('Lot Number')
-                            ->options(function () {
-                                $user = Auth::user();
-                                if (!$user) return collect();
-                                
-                                // For investors, get LAT records from their agency owner
-                                if ($user->role === 'Investor' && $user->agency_owner_id) {
-                                    return Lat::where('user_id', $user->agency_owner_id)->pluck('lat_no', 'id');
-                                }
-                                
-                                // For others, get their own LAT records
-                                return Lat::where('user_id', $user->id)->pluck('lat_no', 'id');
-                            })
+                            ->options($availableLats)
+                            ->default($latestLatId)
                             ->required()
                             ->reactive()
-                            ->afterStateUpdated(fn ($state, callable $set) => $set('design_name', Lat::find($state)?->design_name)),
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if ($state) {
+                                    $lat = Lat::find($state);
+                                    if ($lat) {
+                                        $set('design_name', $lat->design_name);
+                                    }
+                                } else {
+                                    $set('design_name', null);
+                                }
+                            }),
 
                         TextInput::make('design_name')
                             ->label('Design Name')
                             ->disabled()
                             ->required()
-                            ->default(''),
+                            ->dehydrated()
+                            ->default(function () use ($latestLatId) {
+                                if ($latestLatId) {
+                                    $lat = Lat::find($latestLatId);
+                                    return $lat ? $lat->design_name : null;
+                                }
+                                return null;
+                            }),
 
                         TextInput::make('amount_required')
                             ->label('Amount Required (PKR)')
@@ -131,9 +155,56 @@ class InvestmentPoolForm
                             ->minItems(fn (callable $get) => (int) ($get('number_of_partners') ?? 1))
                             ->maxItems(fn (callable $get) => (int) ($get('number_of_partners') ?? 1))
                             ->schema([
-                                TextInput::make('name')
+                                Select::make('investor_id')
                                     ->label('Partner Name')
-                                    ->required(),
+                                    ->options(function () {
+                                        $user = Auth::user();
+                                        if (!$user) return [];
+                                        
+                                        $query = \App\Models\User::where('role', 'Investor');
+                                        
+                                        if ($user->role === 'Agency Owner') {
+                                            // Get investors invited by this agency owner
+                                            $query->where('invited_by', $user->id);
+                                        } elseif ($user->role === 'Super Admin') {
+                                            // Super admin can see all investors
+                                            // No additional filtering needed
+                                        } else {
+                                            // For other roles, show no options
+                                            return [];
+                                        }
+                                        
+                                        return $query->pluck('name', 'id');
+                                    })
+                                    ->required()
+                                    ->searchable()
+                                    ->preload()
+                                    ->reactive()
+                                    ->getOptionLabelUsing(fn ($value): ?string => \App\Models\User::find($value)?->name)
+                                    ->afterStateHydrated(function (callable $set, $state) {
+                                        if ($state) {
+                                            $investor = \App\Models\User::find($state);
+                                            if ($investor && $investor->wallet) {
+                                                $set('wallet_balance', $investor->wallet->amount);
+                                            }
+                                        }
+                                    })
+                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                        if ($state) {
+                                            $investor = \App\Models\User::find($state);
+                                            if ($investor) {
+                                                $set('wallet_balance', $investor->wallet?->amount);
+                                                
+                                                // Auto-calculate investment amount if not set
+                                                $amountRequired = floatval($get('../../amount_required') ?? 0);
+                                                $numberOfPartners = intval($get('../../number_of_partners') ?? 1);
+                                                if ($numberOfPartners > 0) {
+                                                    $investmentAmount = $amountRequired / $numberOfPartners;
+                                                    $set('investment_amount', number_format($investmentAmount, 2, '.', ''));
+                                                }
+                                            }
+                                        }
+                                    }),
 
                                 TextInput::make('investment_amount')
                                     ->label('Investment Amount')
@@ -210,37 +281,14 @@ class InvestmentPoolForm
                                                 $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
                                                 if ($wallet) {
                                                     $amount = floatval($get("../../partners.{$currentIndex}.investment_amount") ?? 0);
-                                                    $isValid = $amount <= $wallet->amount;
                                                     
-                                                    return [
-                                                        'text' => "Available balance: PKR " . number_format($wallet->amount, 2),
-                                                        'color' => $isValid ? 'success' : 'danger'
-                                                    ];
+                                                    if ($amount > 0 && $amount > $wallet->amount) {
+                                                        return "Insufficient wallet balance. Available: PKR " . number_format($wallet->amount, 2);
+                                                    }
+                                                    
+                                                    return "Available balance: PKR " . number_format($wallet->amount, 2);
                                                 }
-                                                return [
-                                                    'text' => "No wallet found for this investor",
-                                                    'color' => 'danger'
-                                                ];
-                                            }
-                                        }
-                                        return null;
-                                    })
-                                    ->hint(function (callable $get) {
-                                        $partners = $get('../../partners') ?? [];
-                                        $currentIndex = array_key_last($partners);
-                                        
-                                        if ($currentIndex !== null) {
-                                            $investorId = $get("../../partners.{$currentIndex}.investor_id");
-                                            $amount = floatval($get("../../partners.{$currentIndex}.investment_amount") ?? 0);
-                                            
-                                            if ($investorId && $amount > 0) {
-                                                $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
-                                                if ($wallet && $amount > $wallet->amount) {
-                                                    return [
-                                                        'text' => "Insufficient wallet balance. Available: PKR " . number_format($wallet->amount, 2),
-                                                        'color' => 'danger'
-                                                    ];
-                                                }
+                                                return "No wallet found for this investor";
                                             }
                                         }
                                         return null;

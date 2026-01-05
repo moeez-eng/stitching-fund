@@ -9,6 +9,7 @@ use Filament\Tables\Table;
 use Filament\Schemas\Schema;
 use App\Models\InvestmentPool;
 use Filament\Resources\Resource;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Facades\Log;
 use Filament\Support\Icons\Heroicon;
@@ -35,7 +36,17 @@ class InvestmentPoolResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return InvestmentPoolForm::configure($schema);
+        $schema = InvestmentPoolForm::configure($schema);
+        
+        // If we're creating from a LAT, pre-fill the lat_id
+        if (request()->has('lat_id')) {
+            $components = $schema->getComponents();
+            $components[] = \Filament\Forms\Components\Hidden::make('lat_id')
+                ->default(request('lat_id'));
+            $schema->schema($components);
+        }
+        
+        return $schema;
     }
 
     public static function table(Table $table): Table
@@ -55,6 +66,7 @@ class InvestmentPoolResource extends Resource
     {
         return [
             'index' => ListInvestmentPools::route('/'),
+            'create' => CreateInvestmentPool::route('/create'),
             'view' => ViewInvestmentPool::route('/{record}'),
             'edit' => EditInvestmentPool::route('/{record}/edit'),
         ];
@@ -87,91 +99,6 @@ class InvestmentPoolResource extends Resource
         return in_array($user->role, ['Super Admin', 'Agency Owner', 'Investor']);
     }
 
-    public static function shouldRegisterNavigation(): bool
-    {
-        $user = Auth::user();
-        return $user && in_array($user->role, ['Super Admin', 'Agency Owner', 'Investor']);
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        $user = Auth::user();
-        
-        // Debug: Log current user info
-        Log::info('Current user info', [
-            'user_id' => $user->id,
-            'name' => $user->name,
-            'role' => $user->role,
-            'invited_by' => $user->invited_by,
-            'has_inviter' => (bool)$user->invited_by
-        ]);
-
-        $query = parent::getEloquentQuery();
-
-        // Super Admin sees all investment pools
-        if ($user->role === 'Super Admin') {
-            Log::info('Admin access - showing all pools');
-            return $query;
-        }
-
-        // Agency Owner sees only their own investment pools
-        if ($user->role === 'Agency Owner') {
-            Log::info('Agency Owner access - showing pools for user_id: ' . $user->id);
-            
-            // Ensure the user can only see their own pools
-            return $query->where('user_id', $user->id);
-        }
-
-        // Investor sees investment pools from their inviter (Agency Owner)
-        if ($user->role === 'Investor') {
-            $invitedBy = $user->invited_by;
-            
-            Log::info('Investor access check', [
-                'investor_id' => $user->id,
-                'invited_by' => $invitedBy,
-                'has_inviter' => (bool)$invitedBy
-            ]);
-            
-            if ($invitedBy) {
-                // Verify the inviter is an Agency Owner
-                $inviter = \App\Models\User::find($invitedBy);
-                
-                if ($inviter && $inviter->role === 'Agency Owner') {
-                    // Debug the query
-                    $poolCount = $query->where('user_id', $invitedBy)
-                                     ->where('status', 'active') // Only show active pools
-                                     ->count();
-                    
-                    Log::info('Investor pool access', [
-                        'pools_found' => $poolCount,
-                        'query' => $query->where('user_id', $invitedBy)->toSql(),
-                        'bindings' => $query->getBindings()
-                    ]);
-                    
-                    // Show active investment pools belonging to the investor's inviter
-                    return $query->where('user_id', $invitedBy)
-                               ->where('status', 'active');
-                } else {
-                    Log::warning('Investor has invalid inviter', [
-                        'investor_id' => $user->id,
-                        'inviter_id' => $invitedBy,
-                        'inviter_role' => $inviter ? $inviter->role : 'not_found'
-                    ]);
-                }
-            }
-            
-            // If no valid inviter, show nothing
-            Log::warning('Investor has no valid inviter assigned', ['user_id' => $user->id]);
-            return $query->whereNull('id');
-        }
-
-        // Default: show nothing for unauthorized roles
-        Log::warning('Unauthorized access attempt', [
-            'user_id' => $user->id,
-            'role' => $user->role
-        ]);
-        return $query->whereNull('id');
-    }
 
  public static function canView($record): bool
 {
@@ -240,13 +167,13 @@ class InvestmentPoolResource extends Resource
     }
 
     public static function canCreate(): bool
-    {
-        $user = Auth::user();
-        if (!$user) return false;
-        
-        // Only Super Admin can create
-        return $user->role === 'Super Admin';
-    }
+{
+    $user = Auth::user();
+    if (!$user) return false;
+    
+    // Super Admin and Agency Owner can create
+    return in_array($user->role, ['Super Admin', 'Agency Owner']);
+}
 
     public static function canDelete($record): bool
     {
@@ -261,6 +188,26 @@ class InvestmentPoolResource extends Resource
         
         // Investors cannot delete
         return false;
+    }
+
+    protected static function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['user_id'] = $data['user_id'] ?? Auth::id();
+        
+        // If lat_id is passed in the request, use it
+        if (request()->has('lat_id')) {
+            $data['lat_id'] = request('lat_id');
+            $lat = \App\Models\Lat::find($data['lat_id']);
+            if ($lat) {
+                $data['design_name'] = $lat->design_name;
+                // Optionally set amount_required from LAT's materials and expenses
+                $materialsTotal = $lat->materials->sum('price');
+                $expensesTotal = $lat->expenses->sum('price');
+                $data['amount_required'] = $materialsTotal + $expensesTotal;
+            }
+        }
+        
+        return $data;
     }
 
     protected static function mutateFormDataBeforeSave(array $data): array
@@ -294,22 +241,135 @@ class InvestmentPoolResource extends Resource
         Log::info('Final data before save: ', $data);
         return $data;
     }
-    protected function handleRecordUpdate(Model $record, array $data): Model
-{
-    $record->update($data);
-    
-    // Sync investors if they exist in the request
-    if (isset($data['partners'])) {
-        $investors = collect($data['partners'])->mapWithKeys(function ($partner) {
-            return [
-                $partner['investor_id'] => [
-                    'investment_amount' => $partner['investment_amount'],
-                    'investment_percentage' => $partner['investment_percentage']
-                ]
-            ];
-        })->toArray();
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = Auth::user();
+        // Hide from navigation if we're in a LAT context
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner', 'Investor']) && !request()->has('lat_id');
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $user = Auth::user();
         
-        $record->investors()->sync($investors);
+        // Debug: Log current user info
+        Log::info('Current user info', [
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'role' => $user->role,
+            'invited_by' => $user->invited_by,
+            'has_inviter' => (bool)$user->invited_by
+        ]);
+
+        $query = parent::getEloquentQuery();
+
+        // If we're viewing from a LAT, only show pools for that LAT
+        if (request()->has('lat_id')) {
+            $query->where('lat_id', request('lat_id'));
+        }
+
+        // Super Admin sees all investment pools
+        if ($user->role === 'Super Admin') {
+            Log::info('Admin access - showing all pools');
+            return $query;
+        }
+
+        // Agency Owner sees only their own investment pools
+        if ($user->role === 'Agency Owner') {
+            Log::info('Agency Owner access - showing pools for user_id: ' . $user->id);
+            
+            // Ensure the user can only see their own pools
+            return $query->where('user_id', $user->id);
+        }
+
+        // Investor sees investment pools from their inviter (Agency Owner)
+        if ($user->role === 'Investor') {
+            $invitedBy = $user->invited_by;
+            
+            Log::info('Investor access check', [
+                'investor_id' => $user->id,
+                'invited_by' => $invitedBy,
+                'has_inviter' => (bool)$invitedBy
+            ]);
+            
+            if ($invitedBy) {
+                // Verify the inviter is an Agency Owner
+                $inviter = \App\Models\User::find($invitedBy);
+                
+                if ($inviter && $inviter->role === 'Agency Owner') {
+                    // Debug the query
+                    $poolCount = $query->where('user_id', $invitedBy)
+                                     ->where('status', 'active') // Only show active pools
+                                     ->count();
+                    
+                    Log::info('Investor pool access', [
+                        'pools_found' => $poolCount,
+                        'query' => $query->where('user_id', $invitedBy)->toSql(),
+                        'bindings' => $query->getBindings()
+                    ]);
+                    
+                    // Show active investment pools belonging to the investor's inviter
+                    return $query->where('user_id', $invitedBy)
+                               ->where('status', 'active');
+                } else {
+                    Log::warning('Investor has invalid inviter', [
+                        'investor_id' => $user->id,
+                        'inviter_id' => $invitedBy,
+                        'inviter_role' => $inviter ? $inviter->role : 'not_found'
+                    ]);
+                }
+            }
+            
+            // If no valid inviter, show nothing
+            Log::warning('Investor has no valid inviter assigned', ['user_id' => $user->id]);
+            return $query->whereNull('id');
+        }
+
+        // Default: show nothing for unauthorized roles
+        Log::warning('Unauthorized access attempt', [
+            'user_id' => $user->id,
+            'role' => $user->role
+        ]);
+        return $query->whereNull('id');
+    }
+ protected function handleRecordUpdate(Model $record, array $data): Model
+{
+    DB::beginTransaction();
+    try {
+        // Update the investment pool
+        $record->update($data);
+        
+        // Process wallet allocations if partners exist in the request
+        if (isset($data['partners'])) {
+            // First, delete any existing wallet allocations for this pool
+            \App\Models\WalletAllocation::where('investment_pool_id', $record->id)->delete();
+            
+            foreach ($data['partners'] as $partner) {
+                if (empty($partner['investor_id']) || empty($partner['investment_amount'])) {
+                    continue;
+                }
+                
+                // Find the investor's wallet
+                $wallet = \App\Models\Wallet::where('investor_id', $partner['investor_id'])->first();
+                
+                if ($wallet) {
+                    // Create the wallet allocation
+                    \App\Models\WalletAllocation::create([
+                        'wallet_id' => $wallet->id,
+                        'investor_id' => $partner['investor_id'],
+                        'investment_pool_id' => $record->id,
+                        'amount' => $partner['investment_amount'],
+                    ]);
+                  
+                }
+            }
+        }
+        
+        DB::commit();
+    } catch (\Exception $e) {
+        DB::rollBack();
+        throw $e;
     }
     
     return $record;

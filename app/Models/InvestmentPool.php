@@ -81,73 +81,8 @@ class InvestmentPool extends Model
         });
 
         static::updating(function ($investmentPool) {
-            // Get existing allocations for this pool
-            $existingAllocations = \App\Models\WalletAllocation::where('investment_pool_id', $investmentPool->id)
-                ->pluck('amount', 'investor_id')
-                ->toArray();
-            
-            // Process wallet allocations if partners exist
-            if (isset($investmentPool->partners) && is_array($investmentPool->partners)) {
-                foreach ($investmentPool->partners as $partner) {
-                    if (empty($partner['investor_id']) || empty($partner['investment_amount'])) {
-                        continue;
-                    }
-                    
-                    // Find the investor's wallet
-                    $wallet = \App\Models\Wallet::where('investor_id', $partner['investor_id'])->first();
-                    
-                    if ($wallet) {
-                        $newAmount = floatval($partner['investment_amount']);
-                        $existingAmount = floatval($existingAllocations[$partner['investor_id']] ?? 0);
-                        $amountDifference = $newAmount - $existingAmount;
-                        
-                        if ($amountDifference > 0) {
-                            // Additional amount to deduct
-                            if ($wallet->amount < $amountDifference) {
-                                throw new \Exception("Insufficient funds in wallet for investor. Available: PKR {$wallet->amount}, Required: PKR {$amountDifference}");
-                            }
-                            $wallet->decrement('amount', $amountDifference);
-                        } elseif ($amountDifference < 0) {
-                            // Refund the difference
-                            $wallet->increment('amount', abs($amountDifference));
-                        }
-                        
-                        // Update or create the wallet allocation
-                        \App\Models\WalletAllocation::updateOrCreate(
-                            [
-                                'wallet_id' => $wallet->id,
-                                'investor_id' => $partner['investor_id'],
-                                'investment_pool_id' => $investmentPool->id,
-                            ],
-                            [
-                                'amount' => $newAmount,
-                            ]
-                        );
-                    }
-                }
-                
-                // Refund any investors who were removed
-                foreach ($existingAllocations as $investorId => $amount) {
-                    $stillExists = false;
-                    foreach ($investmentPool->partners as $partner) {
-                        if (($partner['investor_id'] ?? null) == $investorId) {
-                            $stillExists = true;
-                            break;
-                        }
-                    }
-                    
-                    if (!$stillExists && $amount > 0) {
-                        $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
-                        if ($wallet) {
-                            $wallet->increment('amount', $amount);
-                        }
-                        // Remove the allocation
-                        \App\Models\WalletAllocation::where('investment_pool_id', $investmentPool->id)
-                            ->where('investor_id', $investorId)
-                            ->delete();
-                    }
-                }
-            }
+            // Wallet allocations are now handled in the InvestmentPoolResource
+            // to prevent double deduction during updates
             
             // Calculate total_collected from partners
             if (isset($investmentPool->partners)) {
@@ -180,35 +115,8 @@ class InvestmentPool extends Model
         });
 
         static::created(function ($investmentPool) {
-            // Create wallet allocations when pool is created
-            if (isset($investmentPool->partners) && is_array($investmentPool->partners)) {
-                foreach ($investmentPool->partners as $partner) {
-                    if (empty($partner['investor_id']) || empty($partner['investment_amount'])) {
-                        continue;
-                    }
-                    
-                    // Find the investor's wallet
-                    $wallet = \App\Models\Wallet::where('investor_id', $partner['investor_id'])->first();
-                    
-                    if ($wallet) {
-                        // Check if wallet has sufficient balance
-                        if ($wallet->amount < $partner['investment_amount']) {
-                            throw new \Exception("Insufficient funds in wallet for investor '{$partner['investor_id']}'. Available: PKR {$wallet->amount}, Required: PKR {$partner['investment_amount']}");
-                        }
-                        
-                        // Deduct from wallet
-                        $wallet->decrement('amount', $partner['investment_amount']);
-                        
-                        // Create the wallet allocation
-                        \App\Models\WalletAllocation::create([
-                            'wallet_id' => $wallet->id,
-                            'investor_id' => $partner['investor_id'],
-                            'investment_pool_id' => $investmentPool->id,
-                            'amount' => $partner['investment_amount'],
-                        ]);
-                    }
-                }
-            }
+            // Wallet allocations are now handled in the InvestmentPoolResource
+            // to prevent double deduction during creation
         });
     }
     

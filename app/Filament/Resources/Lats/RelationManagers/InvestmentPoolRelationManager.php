@@ -38,10 +38,12 @@ class InvestmentPoolRelationManager extends RelationManager
                 EditAction::make()
                     ->url(fn ($record) => route('filament.admin.resources.investment-pool.investment-pools.edit', $record)),
             ])
+            
             ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->poll(10);
     }
 }

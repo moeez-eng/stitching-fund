@@ -56,7 +56,7 @@ class Wallet extends Model
     }
     public function getAvailableBalanceAttribute(): float
     {
-        return (float)$this->balance - $this->allocated_balance;
+        return (float)$this->amount;
     }
     public function getTotalInvestedAttribute()
     {

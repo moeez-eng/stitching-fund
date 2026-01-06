@@ -92,6 +92,7 @@ class InvestmentPoolTable
               EditAction::make(),
               DeleteAction::make(),
             ])
-            ->bulkActions([]);
+            ->bulkActions([])
+            ->poll(10);
     }
 }

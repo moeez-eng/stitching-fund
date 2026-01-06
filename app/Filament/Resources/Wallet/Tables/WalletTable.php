@@ -188,6 +188,7 @@ class WalletTable
             ])
             ->emptyStateHeading('No wallet deposits found')
             ->emptyStateDescription('Create your first wallet deposit to get started.')
-            ->emptyStateIcon('heroicon-o-credit-card');
+            ->emptyStateIcon('heroicon-o-credit-card')
+            ->poll(10);
     }
 }

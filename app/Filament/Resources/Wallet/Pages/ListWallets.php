@@ -81,32 +81,12 @@ class ListWallets extends Page
 
     public function mount()
     {
-        $user = Auth::user();
-        $wallets = $this->getWalletData();
-        
-        if ($wallets && isset($wallets[0])) {
-            $wallet = $wallets[0];
-            
-            // Calculate total invested from allocations
-            $totalInvested = $wallet->allocations->sum('amount') ?? 0;
-            
-            // Available balance is wallet amount minus total invested
-            $availableBalance = $wallet->amount - $totalInvested;
-            
-            if ($availableBalance > 50000) {
-                $status = 'healthy';
-            } elseif ($availableBalance > 10000) {
-                $status = 'low';
-            } else {
-                $status = 'critical';
-            }
-            
-            $this->userName = $wallet->investor->name ?? $user->name;
-            $this->wallet = $wallet;
-            $this->walletStatus = ['status' => $status];
-            $this->availableBalance = $availableBalance;
-            $this->totalInvested = $totalInvested;
-            $this->user = $user;
-        }
+        $this->loadData();
+    }
+    
+    public function loadData()
+    {
+        // This method is called by wire:poll every 5 seconds
+        // The data will be refreshed in the view automatically
     }
 }

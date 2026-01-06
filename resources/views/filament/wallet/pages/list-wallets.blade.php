@@ -10,7 +10,7 @@
         $pools = InvestmentPool::where('status', 'open')->get();
     @endphp
 
-    <div style="max-width: 1200px; margin: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; padding: 1rem;">
+    <div wire:poll.5s="loadData" style="max-width: 1200px; margin: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; padding: 1rem;">
 
     @foreach($wallets as $wallet)
         @php

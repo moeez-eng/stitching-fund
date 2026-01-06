@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 class InvestmentPool extends Model
 {
@@ -44,8 +45,108 @@ class InvestmentPool extends Model
     protected static function booted()
     {
         static::creating(function ($investmentPool) {
+            // Calculate total_collected from partners
+            if (isset($investmentPool->partners)) {
+                $partners = $investmentPool->partners;
+                    
+                if (is_array($partners)) {
+                    $totalCollected = 0;
+                    foreach ($partners as $partner) {
+                        if (isset($partner['investment_amount'])) {
+                            $totalCollected += floatval($partner['investment_amount']);
+                        }
+                    }
+                    $investmentPool->total_collected = $totalCollected;
+                    
+                    // Calculate percentage_collected
+                    if ($investmentPool->amount_required > 0) {
+                        $investmentPool->percentage_collected = min(100, round(($totalCollected / $investmentPool->amount_required) * 100, 2));
+                    } else {
+                        $investmentPool->percentage_collected = 0;
+                    }
+                    
+                    // Calculate remaining_amount
+                    $investmentPool->remaining_amount = max(0, $investmentPool->amount_required - $totalCollected);
+                }
+            } else {
+                $investmentPool->total_collected = 0;
+                $investmentPool->percentage_collected = 0;
+                $investmentPool->remaining_amount = $investmentPool->amount_required ?? 0;
+            }
+            
+            // Set default status
             if (empty($investmentPool->status)) {
-                $investmentPool->status = self::STATUS_OPEN;
+                $investmentPool->status = 'open';
+            }
+        });
+
+        static::updating(function ($investmentPool) {
+            // Get existing allocations for this pool
+            $existingAllocations = \App\Models\WalletAllocation::where('investment_pool_id', $investmentPool->id)
+                ->pluck('amount', 'investor_id')
+                ->toArray();
+            
+            // Process wallet allocations if partners exist
+            if (isset($investmentPool->partners) && is_array($investmentPool->partners)) {
+                foreach ($investmentPool->partners as $partner) {
+                    if (empty($partner['investor_id']) || empty($partner['investment_amount'])) {
+                        continue;
+                    }
+                    
+                    // Find the investor's wallet
+                    $wallet = \App\Models\Wallet::where('investor_id', $partner['investor_id'])->first();
+                    
+                    if ($wallet) {
+                        $newAmount = floatval($partner['investment_amount']);
+                        $existingAmount = floatval($existingAllocations[$partner['investor_id']] ?? 0);
+                        $amountDifference = $newAmount - $existingAmount;
+                        
+                        if ($amountDifference > 0) {
+                            // Additional amount to deduct
+                            if ($wallet->amount < $amountDifference) {
+                                throw new \Exception("Insufficient funds in wallet for investor. Available: PKR {$wallet->amount}, Required: PKR {$amountDifference}");
+                            }
+                            $wallet->decrement('amount', $amountDifference);
+                        } elseif ($amountDifference < 0) {
+                            // Refund the difference
+                            $wallet->increment('amount', abs($amountDifference));
+                        }
+                        
+                        // Update or create the wallet allocation
+                        \App\Models\WalletAllocation::updateOrCreate(
+                            [
+                                'wallet_id' => $wallet->id,
+                                'investor_id' => $partner['investor_id'],
+                                'investment_pool_id' => $investmentPool->id,
+                            ],
+                            [
+                                'amount' => $newAmount,
+                            ]
+                        );
+                    }
+                }
+                
+                // Refund any investors who were removed
+                foreach ($existingAllocations as $investorId => $amount) {
+                    $stillExists = false;
+                    foreach ($investmentPool->partners as $partner) {
+                        if (($partner['investor_id'] ?? null) == $investorId) {
+                            $stillExists = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!$stillExists && $amount > 0) {
+                        $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
+                        if ($wallet) {
+                            $wallet->increment('amount', $amount);
+                        }
+                        // Remove the allocation
+                        \App\Models\WalletAllocation::where('investment_pool_id', $investmentPool->id)
+                            ->where('investor_id', $investorId)
+                            ->delete();
+                    }
+                }
             }
             
             // Calculate total_collected from partners
@@ -76,49 +177,37 @@ class InvestmentPool extends Model
                 $investmentPool->percentage_collected = 0;
                 $investmentPool->remaining_amount = $investmentPool->amount_required ?? 0;
             }
-            
-            // Ensure design_name is set from lat_id if not provided
-            if (empty($investmentPool->design_name) && $investmentPool->lat_id) {
-                $investmentPool->design_name = \App\Models\Lat::find($investmentPool->lat_id)?->design_name;
-            }
-
-            // Check if all investors have wallets
-            if (isset($investmentPool->partners) && is_array($investmentPool->partners)) {
-                foreach ($investmentPool->partners as $partner) {
-                    if (isset($partner['investor_id'])) {
-                        $investor = \App\Models\User::find($partner['investor_id']);
-                        if (!$investor) {
-                            throw new \Exception("Investor with ID {$partner['investor_id']} not found.");
-                        }
-                        $wallet = \App\Models\Wallet::where('investor_id', $investor->id)->first();
-                        if (!$wallet) {
-                            throw new \Exception("Investor '{$investor->name}' (ID: {$investor->id}) does not have a wallet. Please create a wallet for this investor first.");
-                        }
-                    }
-                }
-            }
         });
-        
-        static::updating(function ($investmentPool) {
-            // Recalculate totals when partners are updated
+
+        static::created(function ($investmentPool) {
+            // Create wallet allocations when pool is created
             if (isset($investmentPool->partners) && is_array($investmentPool->partners)) {
-                $totalCollected = 0;
                 foreach ($investmentPool->partners as $partner) {
-                    if (isset($partner['investment_amount'])) {
-                        $totalCollected += floatval($partner['investment_amount']);
+                    if (empty($partner['investor_id']) || empty($partner['investment_amount'])) {
+                        continue;
+                    }
+                    
+                    // Find the investor's wallet
+                    $wallet = \App\Models\Wallet::where('investor_id', $partner['investor_id'])->first();
+                    
+                    if ($wallet) {
+                        // Check if wallet has sufficient balance
+                        if ($wallet->amount < $partner['investment_amount']) {
+                            throw new \Exception("Insufficient funds in wallet for investor '{$partner['investor_id']}'. Available: PKR {$wallet->amount}, Required: PKR {$partner['investment_amount']}");
+                        }
+                        
+                        // Deduct from wallet
+                        $wallet->decrement('amount', $partner['investment_amount']);
+                        
+                        // Create the wallet allocation
+                        \App\Models\WalletAllocation::create([
+                            'wallet_id' => $wallet->id,
+                            'investor_id' => $partner['investor_id'],
+                            'investment_pool_id' => $investmentPool->id,
+                            'amount' => $partner['investment_amount'],
+                        ]);
                     }
                 }
-                $investmentPool->total_collected = $totalCollected;
-                
-                // Calculate percentage_collected
-                if ($investmentPool->amount_required > 0) {
-                    $investmentPool->percentage_collected = min(100, round(($totalCollected / $investmentPool->amount_required) * 100, 2));
-                } else {
-                    $investmentPool->percentage_collected = 0;
-                }
-                
-                // Calculate remaining_amount
-                $investmentPool->remaining_amount = max(0, $investmentPool->amount_required - $totalCollected);
             }
         });
     }

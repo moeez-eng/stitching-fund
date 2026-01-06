@@ -194,6 +194,15 @@ class InvestmentPoolResource extends Resource
     {
         $data['user_id'] = $data['user_id'] ?? Auth::id();
         
+        // Handle pre-filled data from wallet
+        if (request()->has('investor_id')) {
+            $data['partners'] = [[
+                'investor_id' => request('investor_id'),
+                'investment_amount' => 0,
+                'investment_percentage' => 0,
+            ]];
+        }
+        
         // If lat_id is passed in the request, use it
         if (request()->has('lat_id')) {
             $data['lat_id'] = request('lat_id');
@@ -212,27 +221,21 @@ class InvestmentPoolResource extends Resource
 
     protected static function mutateFormDataBeforeSave(array $data): array
     {
-        // Debug logging
-        Log::info('mutateFormDataBeforeSave called with data: ', $data);
-
         // Ensure design_name is set from lat_id if not provided
         if (isset($data['lat_id']) && empty($data['design_name'])) {
             $designName = Lat::find($data['lat_id'])?->design_name;
             $data['design_name'] = $designName;
-            Log::info('Setting design_name to: ' . $designName);
         }
 
         // Process partners data to include investment_percentage and calculate totals
         if (isset($data['partners']) && is_array($data['partners'])) {
             $amountRequired = $data['amount_required'] ?? 0;
             $totalCollected = 0;
-            Log::info('Processing partners with amount_required: ' . $amountRequired);
             
             $data['partners'] = collect($data['partners'])->map(function ($partner) use ($amountRequired, &$totalCollected) {
                 if (isset($partner['investment_amount']) && $amountRequired > 0) {
                     $partner['investment_percentage'] = round(($partner['investment_amount'] / $amountRequired) * 100, 2);
                     $totalCollected += floatval($partner['investment_amount']);
-                    Log::info('Partner percentage calculated: ' . $partner['investment_percentage'] . ', amount: ' . $partner['investment_amount']);
                 } else {
                     $partner['investment_percentage'] = 0;
                 }
@@ -243,11 +246,8 @@ class InvestmentPoolResource extends Resource
             $data['total_collected'] = $totalCollected;
             $data['percentage_collected'] = $amountRequired > 0 ? min(100, round(($totalCollected / $amountRequired) * 100, 2)) : 0;
             $data['remaining_amount'] = max(0, $amountRequired - $totalCollected);
-            
-            Log::info('Calculated totals - collected: ' . $totalCollected . ', percentage: ' . $data['percentage_collected'] . ', remaining: ' . $data['remaining_amount']);
         }
 
-        Log::info('Final data before save: ', $data);
         return $data;
     }
 
@@ -348,37 +348,6 @@ class InvestmentPoolResource extends Resource
     try {
         // Update the investment pool
         $record->update($data);
-        
-        // Process wallet allocations if partners exist in the request
-        if (isset($data['partners'])) {
-            foreach ($data['partners'] as $partner) {
-                if (empty($partner['investor_id']) || empty($partner['investment_amount'])) {
-                    continue;
-                }
-                
-                // Find the investor's wallet
-                $wallet = \App\Models\Wallet::where('investor_id', $partner['investor_id'])->first();
-                
-                if ($wallet) {
-                    // Check if wallet has sufficient balance
-                    if ($wallet->amount < $partner['investment_amount']) {
-                        throw new \Exception("Insufficient funds in wallet for investor '{$partner['investor_id']}'. Available: PKR {$wallet->amount}, Required: PKR {$partner['investment_amount']}");
-                    }
-                    
-                    // Deduct from wallet
-                    $wallet->decrement('amount', $partner['investment_amount']);
-                    
-                    // Create the wallet allocation
-                    \App\Models\WalletAllocation::create([
-                        'wallet_id' => $wallet->id,
-                        'investor_id' => $partner['investor_id'],
-                        'investment_pool_id' => $record->id,
-                        'amount' => $partner['investment_amount'],
-                    ]);
-                  
-                }
-            }
-        }
         
         DB::commit();
     } catch (\Exception $e) {

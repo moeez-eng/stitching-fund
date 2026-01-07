@@ -88,9 +88,11 @@ class InvestmentPoolTable
                     ->query(fn ($query) => $query->where('percentage_collected', 0)),
             ])
             ->actions([
-              ViewAction::make(),
-              EditAction::make(),
-              DeleteAction::make(),
+                ViewAction::make(),
+                EditAction::make()
+                    ->visible(fn (): bool => Auth::user()->role === 'Agency Owner' || Auth::user()->role === 'Super Admin'),
+                DeleteAction::make()
+                    ->visible(fn (): bool => Auth::user()->role === 'Agency Owner' || Auth::user()->role === 'Super Admin'),
             ])
             ->bulkActions([])
             ->poll(10);

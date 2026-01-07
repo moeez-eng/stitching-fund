@@ -10,8 +10,9 @@ use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\View;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 
@@ -19,10 +20,11 @@ class InvestmentPoolForm
 {
     public static function configure(Schema $schema): Schema
     {
-        // Get available LATs for the current user
+        // Get available LATs for current user and find current one
         $user = Auth::user();
         $availableLats = [];
         $latestLatId = null;
+        $currentLatId = null;
         
         if ($user) {
             $query = $user->role === 'Investor' && $user->agency_owner_id
@@ -33,6 +35,16 @@ class InvestmentPoolForm
             $availableLats = $query->pluck('lat_no', 'id')->toArray();
             $latestLat = $query->orderBy('id', 'desc')->first();
             $latestLatId = $latestLat ? $latestLat->id : null;
+            
+            // Check if lat_id is in URL parameter (from LAT relation manager)
+            $urlLatId = request()->get('lat_id');
+            if ($urlLatId && isset($availableLats[$urlLatId])) {
+                $currentLatId = $urlLatId;
+            } else {
+                // Fallback to most recently updated LAT
+                $currentLat = $query->orderBy('updated_at', 'desc')->first();
+                $currentLatId = $currentLat ? $currentLat->id : $latestLatId;
+            }
         }
         
         return $schema
@@ -76,6 +88,12 @@ class InvestmentPoolForm
                         }
                     }),
                     
+                // Dedicated trigger for helper text refresh
+                Hidden::make('_helper_text_trigger')
+                    ->default(1)
+                    ->reactive()
+                    ->live(),
+                    
                 // Error display field (hidden but used to show errors)
                 TextInput::make('_wallet_error')
                     ->hidden()
@@ -92,7 +110,7 @@ class InvestmentPoolForm
                         Select::make('lat_id')
                             ->label('Lot Number')
                             ->options($availableLats)
-                            ->default($latestLatId)
+                            ->default($currentLatId)
                             ->required()
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set) {
@@ -125,27 +143,22 @@ class InvestmentPoolForm
                             ->prefix('PKR')
                             ->required()
                             ->minValue(1)
-                            ->step(0.01)
-                            ->default(0.00)
-                            ->reactive()
+                            ->live(debounce: 1000)
                             ->afterStateUpdated(function (callable $set, $get, $state) {
-                                // Update the total required amount when changed
-                                $set('amount_required', number_format((float)$state, 2, '.', ''));
-                                
-                                // Recalculate investment amounts for all partners
-                                $partners = $get('partners') ?? [];
-                                $numberOfPartners = count($partners);
+                                // Only recalculate when the field loses focus (debounced)
                                 $amountRequired = floatval($state);
+                                $numberOfPartners = intval($get('number_of_partners')) ?? 2;
                                 
                                 if ($numberOfPartners > 0 && $amountRequired > 0) {
                                     $perPartnerAmount = $amountRequired / $numberOfPartners;
                                     
-                                    foreach ($partners as $index => $partner) {
-                                        $partners[$index]['investment_amount'] = number_format($perPartnerAmount, 2, '.', '');
-                                        $partners[$index]['investment_percentage'] = round(($perPartnerAmount / $amountRequired) * 100, 2);
+                                    // Update all partner fields with equal amounts
+                                    for ($i = 0; $i < 6; $i++) {
+                                        if ($i < $numberOfPartners) {
+                                            $set("partners.{$i}.investment_amount", number_format($perPartnerAmount, 0, '.', ''));
+                                            $set("partners.{$i}.investment_percentage", round(($perPartnerAmount / $amountRequired) * 100, 2));
+                                        }
                                     }
-                                    
-                                    $set('partners', $partners);
                                 }
                                 
                                 // Trigger wallet validation
@@ -156,9 +169,10 @@ class InvestmentPoolForm
                             ->label('Number of Partners')
                             ->numeric()
                             ->default(2)
-                               ->minValue(2)
+                            ->minValue(1)
                             ->required()
                             ->reactive()
+                            ->live(debounce: 300)
                             ->afterStateUpdated(function (callable $set, callable $get, $state) {
                                 $currentPartners = $get('partners') ?? [];
                                 $newCount = (int)$state;
@@ -184,139 +198,163 @@ class InvestmentPoolForm
                                     $perPartnerAmount = $amountRequired / $newCount;
                                     
                                     foreach ($currentPartners as $index => $partner) {
-                                        $currentPartners[$index]['investment_amount'] = number_format($perPartnerAmount, 2, '.', '');
+                                        $currentPartners[$index]['investment_amount'] = number_format($perPartnerAmount, 0, '.', '');
                                         $currentPartners[$index]['investment_percentage'] = round(100 / $newCount, 2);
                                     }
                                     
                                     $set('partners', $currentPartners);
                                 }
+                                
+                                // Force refresh of helper text by updating wallet validation
+                                $set('_validate_wallets', time());
+                                // Also trigger helper text refresh
+                                $set('_helper_text_trigger', time());
+                                // Update partners count to trigger helper text
+                                $set('_partners_count', $newCount);
                             }),
                     ])
                     ->columns(2),
 
                 Section::make('Partner Details')
                     ->schema([
-                        Repeater::make('partners')
-                            ->label('Partners')
-                            ->minItems(fn (callable $get) => (int) ($get('number_of_partners') ?? 2))
-                            ->maxItems(fn (callable $get) => (int) ($get('number_of_partners') ?? 6))
-                            ->schema([
-                                Select::make('investor_id')
-                                    ->label('Partner Name')
-                                    ->options(function () {
-                                        $user = Auth::user();
-                                        if (!$user) return [];
-                                        
-                                        $query = \App\Models\User::where('role', 'Investor');
-                                        
-                                        if ($user->role === 'Agency Owner') {
-                                            // Get investors invited by this agency owner
-                                            $query->where('invited_by', $user->id);
-                                        } elseif ($user->role === 'Super Admin') {
-                                            // Super admin can see all investors
-                                            // No additional filtering needed
-                                        } else {
-                                            // For other roles, show no options
-                                            return [];
-                                        }
-                                        
-                                        return $query->pluck('name', 'id');
-                                    })
-                                    ->required()
-                                    ->searchable()
-                                    ->preload()
-                                    ->reactive()
-                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                        if ($state) {
-                                            $investor = \App\Models\User::find($state);
-                                            if ($investor && $investor->wallet) {
-                                                $set('wallet_balance', $investor->wallet->amount);
+                        // Hidden field to track current partners count for helper text
+                        Hidden::make('_partners_count')
+                            ->default(2)
+                            ->reactive()
+                            ->live(),
+                        
+                        // Dynamic partner fields based on number_of_partners
+                        ...collect(range(0, 5))->map(function ($index) {
+                            return Section::make("Partner " . ($index + 1))
+                                ->schema([
+                                    Select::make("partners.{$index}.investor_id")
+                                        ->label('Partner Name')
+                                        ->options(function () {
+                                            $user = Auth::user();
+                                            if (!$user) return [];
+                                            
+                                            $query = \App\Models\User::where('role', 'Investor');
+                                            
+                                            if ($user->role === 'Agency Owner') {
+                                                $query->where('invited_by', $user->id);
+                                            } elseif ($user->role === 'Super Admin') {
+                                                // Super admin can see all investors
+                                            } else {
+                                                return [];
                                             }
-                                        }
-                                    }),
-
-                                TextInput::make('investment_amount')
-                                    ->label('Investment Amount')
-                                    ->numeric()
-                                    ->prefix('PKR')
-                                    ->required()
-                                    ->reactive()
-                                    ->rules([
-                                        function (callable $get) {
-                                            return function (string $attribute, $value, $fail) use ($get) {
-                                                $investorId = $get('investor_id');
+                                            
+                                            return $query->pluck('name', 'id');
+                                        })
+                                        ->reactive()
+                                        ->afterStateUpdated(function ($state, callable $set, callable $get) use ($index) {
+                                            if ($state) {
+                                                $wallet = \App\Models\Wallet::where('investor_id', $state)->first();
+                                                $set("partners.{$index}.wallet_balance", $wallet ? $wallet->amount : 0);
+                                            } else {
+                                                $set("partners.{$index}.wallet_balance", 0);
+                                            }
+                                        }),
+                                        
+                                    TextInput::make("partners.{$index}.investment_amount")
+                                        ->label('Investment Amount')
+                                        ->numeric()
+                                        ->prefix('PKR')
+                                        ->required()
+                                        ->minValue(0)
+                                        ->step(1)
+                                        ->live()
+                                        ->reactive()
+                                        ->helperText(function (callable $get) use ($index) {
+                                            // Hide helper text on index page, show on create/edit
+                                            if (!str_contains(request()->path(), '/investment-pools') || str_contains(request()->path(), 'create') || str_contains(request()->path(), 'edit')) {
+                                                $walletBalance = $get("partners.{$index}.wallet_balance");
+                                                $investorId = $get("partners.{$index}.investor_id");
+                                                $investmentAmount = floatval($get("partners.{$index}.investment_amount") ?? 0);
+                                                $trigger = $get('_partners_count');
+                                                
+                                                // Hide if this partner index exceeds number of partners
+                                                if ($index >= ($get('number_of_partners') ?? 2)) {
+                                                    return "";
+                                                }
                                                 
                                                 if ($investorId) {
                                                     $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
                                                     if (!$wallet) {
-                                                        $fail('No wallet found for this investor');
-                                                        return;
+                                                        return "No investor wallet found";
+                                                    }
+                                                }
+                                                
+                                                if ($walletBalance > 0) {
+                                                    if ($investmentAmount > 0 && $investmentAmount > $walletBalance) {
+                                                        return " Insufficient wallet balance. Available: PKR " . number_format($walletBalance, 2);
                                                     }
                                                     
-                                                    $amount = floatval($value);
-                                                    if ($amount > 0 && $amount > $wallet->amount) {
-                                                        $fail("Insufficient wallet balance. Available: PKR " . number_format($wallet->amount, 2));
-                                                    }
-                                                }
-                                            };
-                                        },
-                                    ])
-                                    ->afterStateUpdated(function (callable $set, callable $get, $state) {
-                                        $investorId = $get('investor_id');
-                                        
-                                        if ($investorId) {
-                                            $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
-                                            if ($wallet) {
-                                                $amount = floatval($state);
-                                                if ($amount > 0 && $amount > $wallet->amount) {
-                                                    $set('investment_percentage', 0);
-                                                    return;
-                                                }
-                                            }
-                                        }
-                                        
-                                        // Calculate percentage
-                                        $amountRequired = floatval($get('../../amount_required') ?? 0);
-                                        $percentage = $amountRequired > 0 ? round(($state / $amountRequired) * 100, 2) : 0;
-                                        $set('investment_percentage', $percentage);
-                                    })
-                                    ->helperText(function (callable $get) {
-                                        $investorId = $get('investor_id');
-                                        
-                                        if ($investorId) {
-                                            $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
-                                            if ($wallet) {
-                                                $amount = floatval($get('investment_amount') ?? 0);
-                                                
-                                                if ($amount > 0 && $amount > $wallet->amount) {
-                                                    return "⚠️ Insufficient wallet balance. Available: PKR " . number_format($wallet->amount, 2);
+                                                    return " Available balance: PKR " . number_format($walletBalance, 2);
                                                 }
                                                 
-                                                return "✓ Available balance: PKR " . number_format($wallet->amount, 2);
+                                                return "Select a partner to see wallet balance";
                                             }
                                             
-                                            return "⚠️ No wallet found for this investor";
-                                        }
-                                        
-                                        return "Select a partner to see wallet balance";
-                                    }),
+                                            return ""; // Hide helper text on index page
+                                        })
+                                        ->rules([
+                                            function (callable $get) use ($index) {
+                                                return function (string $attribute, $value, $fail) use ($get, $index) {
+                                                    $investorId = $get("partners.{$index}.investor_id");
+                                                    
+                                                    if ($investorId) {
+                                                        $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
+                                                        if (!$wallet) {
+                                                            $fail('No wallet found for this investor');
+                                                            return;
+                                                        }
+                                                        
+                                                        $amount = floatval($value);
+                                                        if ($amount > 0 && $amount > $wallet->amount) {
+                                                            $fail("Insufficient wallet balance. Available: PKR " . number_format($wallet->amount, 2));
+                                                        }
+                                                    }
+                                                };
+                                            },
+                                        ])
+                                        ->afterStateUpdated(function (callable $set, callable $get, $state) use ($index) {
+                                            $investorId = $get("partners.{$index}.investor_id");
+                                            
+                                            if ($investorId) {
+                                                $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
+                                                if ($wallet) {
+                                                    $amount = floatval($state);
+                                                    if ($amount > 0 && $amount > $wallet->amount) {
+                                                        $set("partners.{$index}.investment_percentage", 0);
+                                                        return;
+                                                    }
+                                                }
+                                            }
+                                            
+                                            // Calculate percentage
+                                            $amountRequired = floatval($get('amount_required') ?? 0);
+                                            $percentage = $amountRequired > 0 ? round(($state / $amountRequired) * 100, 2) : 0;
+                                            $set("partners.{$index}.investment_percentage", $percentage);
+                                        }),
 
-                                TextInput::make('investment_percentage')
-                                    ->label('Investment Percentage')
-                                    ->disabled()
-                                    ->dehydrated()
-                                    ->numeric()
-                                    ->suffix('%')
-                                    ->required()
-                                    ->default(0),
-                                    
-                                // Hidden field to store wallet balance for reference
-                                Hidden::make('wallet_balance')
-                                    ->dehydrated(false),
-                            ])
-                            ->columns(2)
-                            ->defaultItems(fn (callable $get) => (int) ($get('number_of_partners') ?? 2)),
+                                    TextInput::make("partners.{$index}.investment_percentage")
+                                        ->label('Investment Percentage')
+                                        ->disabled()
+                                        ->dehydrated()
+                                        ->numeric()
+                                        ->suffix('%')
+                                        ->required()
+                                        ->default(0),
+                                
+                                    // Hidden field to store wallet balance
+                                    Hidden::make("partners.{$index}.wallet_balance")
+                                        ->dehydrated(false)
+                                        ->reactive(),
+                                ])
+                                ->visible(fn (callable $get) => $index < ($get('number_of_partners') ?? 2))
+                                ->columns(2);
+                        })->all(),
                     ]),
             ]);
+        }
     }
-}

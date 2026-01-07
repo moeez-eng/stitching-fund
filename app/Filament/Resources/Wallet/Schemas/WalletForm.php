@@ -14,6 +14,7 @@ class WalletForm
         return [
             Forms\Components\Select::make('investor_id')
                 ->label('Investor')
+                ->unique()
                 ->options(function () {
                     $user = Auth::user();
                     if ($user->role === 'Super Admin') {

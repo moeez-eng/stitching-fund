@@ -219,12 +219,14 @@ class InvestmentPoolResource extends Resource
         return $data;
     }
 
+    
     protected static function mutateFormDataBeforeSave(array $data): array
     {
-        Log::info('=== MUTATE FORM DATA BEFORE SAVE ===');
+        // Debug logging
+        Log::info('mutateFormDataBeforeSave called with data: ', $data);
         Log::info('Data: ' . json_encode($data));
         
-        // Handle wallet allocations if this is an update and partners data exists
+        // Handle wallet allocations if partners data exists
         if (isset($data['partners']) && is_array($data['partners'])) {
             Log::info('Processing partners data in mutateFormDataBeforeSave');
             
@@ -453,7 +455,7 @@ class InvestmentPoolResource extends Resource
     {
         DB::beginTransaction();
         try {
-            // Create the investment pool first
+            // Create the investment pool first (equal distribution is handled in the model)
             $record = static::getModel()::create($data);
             
             // Process wallet allocations if partners exist

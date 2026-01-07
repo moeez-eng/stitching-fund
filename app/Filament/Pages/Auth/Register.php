@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\UserInvitation;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Filament\Forms\Components\TextInput;
 use Filament\Auth\Pages\Register as BaseRegister;
@@ -148,7 +149,7 @@ class Register extends BaseRegister
             return array_merge($data, [
                 'email' => $this->invitationData['email'],
                 'role' => 'Investor',
-                'status' => 'active',
+                'status' => 'inactive',
                 'invited_by' => $this->invitationData['invited_by'] ?? null,
                 'company_name' => $this->invitationData['company_name'] ?? null,
             ]);
@@ -163,18 +164,22 @@ class Register extends BaseRegister
     // Override registration to handle invited_by and mark invitation accepted
     protected function handleRegistration(array $data): User
     {
+        // Get the mutated data (includes invited_by)
+        $mutatedData = $this->mutateFormDataBeforeCreate($data);
+        
         // Create user manually with invited_by
         $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => bcrypt($data['password']),
-            'role' => $data['role'],
-            'status' => $data['status'] ?? 'inactive', // Add default status
-            'invited_by' => $this->invitationData['invited_by'],
-            'company_name' => $data['company_name'] ?? null,
+            'name' => $mutatedData['name'],
+            'email' => $mutatedData['email'],
+            'password' => $mutatedData['password'], // Already hashed by Filament
+            'role' => $mutatedData['role'],
+            'status' => $mutatedData['status'] ?? 'inactive', // Add default status
+            'invited_by' => $mutatedData['invited_by'] ?? null,
+            'company_name' => $mutatedData['company_name'] ?? null,
         ]);
         Log::info('Registration data:', [
         'data' => $data,
+        'mutated_data' => $mutatedData,
         'invitation' => $this->invitation ? $this->invitation->toArray() : null
         ]);
 

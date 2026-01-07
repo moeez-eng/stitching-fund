@@ -7,6 +7,7 @@ use Filament\Tables\Table;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
 use Illuminate\Support\HtmlString;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -28,6 +29,7 @@ class InvestmentPoolRelationManager extends RelationManager
                     ->label('New Investment Pool')
                     ->icon('heroicon-o-plus-circle')
                     ->color('primary')
+                    ->visible(fn () => $this->getOwnerRecord()->investmentPools()->count() === 0)
                     ->url(fn () => route('filament.admin.resources.investment-pool.investment-pools.create', [
                         'lat_id' => $this->getOwnerRecord()->id
                     ])),
@@ -37,6 +39,7 @@ class InvestmentPoolRelationManager extends RelationManager
                     ->url(fn ($record) => route('filament.admin.resources.investment-pool.investment-pools.view', $record)),
                 EditAction::make()
                     ->url(fn ($record) => route('filament.admin.resources.investment-pool.investment-pools.edit', $record)),
+                DeleteAction::make()    
             ])
             
             ->bulkActions([

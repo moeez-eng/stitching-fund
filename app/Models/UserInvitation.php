@@ -18,7 +18,8 @@ class UserInvitation extends Model
     'unique_code',
     'accepted_at',
     'expires_at',
-    'status'  // Make sure this is included
+    'status',
+    'user_id'
 ];
 
     protected $casts = [

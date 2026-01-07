@@ -45,6 +45,30 @@ class InvestmentPool extends Model
     protected static function booted()
     {
         static::creating(function ($investmentPool) {
+            // Calculate and ensure equal distribution of investment amounts
+            if (isset($investmentPool->partners) && is_array($investmentPool->partners) && isset($investmentPool->amount_required)) {
+                $amountRequired = floatval($investmentPool->amount_required);
+                $numberOfPartners = intval($investmentPool->number_of_partners);
+                
+                if ($numberOfPartners > 0 && $amountRequired > 0) {
+                    $perPartnerAmount = $amountRequired / $numberOfPartners;
+                    
+                    // Create a copy of partners array to modify
+                    $partners = $investmentPool->partners;
+                    
+                    // Update each partner's investment amount to ensure equal distribution
+                    foreach ($partners as $index => $partner) {
+                        if (!empty($partner['investor_id'])) {
+                            $partners[$index]['investment_amount'] = number_format($perPartnerAmount, 0, '.', '');
+                            $partners[$index]['investment_percentage'] = round(($perPartnerAmount / $amountRequired) * 100, 2);
+                        }
+                    }
+                    
+                    // Update the partners property with the modified array
+                    $investmentPool->partners = $partners;
+                }
+            }
+            
             // Calculate total_collected from partners
             if (isset($investmentPool->partners)) {
                 $partners = $investmentPool->partners;

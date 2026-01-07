@@ -193,7 +193,7 @@ class ViewInvestmentPool extends ViewRecord
                                 <div style="display: table; width: 100%; border-collapse: collapse; margin-bottom: 12px;">
                                     <div style="display: table-row;">
                                         <div style="display: table-cell; padding: 8px; color: #9ca3af; font-size: 14px; width: 25%;">Partner Name</div>
-                                        <div style="display: table-cell; padding: 8px; color: white; font-size: 14px; font-weight: 600; width: 75%;">' . $partnerName  ($index + 1) . ')</div>
+                                        <div style="display: table-cell; padding: 8px; color: white; font-size: 14px; font-weight: 600; width: 75%;">' . $partnerName . ' (' . ($index + 1) . ')</div>
                                     </div>
                                     <div style="display: table-row;">
                                         <div style="display: table-cell; padding: 8px; color: #9ca3af; font-size: 14px; width: 25%;">Investment Share</div>

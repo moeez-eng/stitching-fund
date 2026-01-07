@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Wallet\Forms;
+namespace App\Filament\Resources\Wallet\Schemas;
 
 use Filament\Forms;
 use Filament\Forms\Form;

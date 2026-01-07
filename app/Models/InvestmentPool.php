@@ -64,8 +64,9 @@ class InvestmentPool extends Model
                         }
                     }
                     
-                    // Update the partners property with the modified array
+                    // Update partners property with modified array and ensure it's properly set
                     $investmentPool->partners = $partners;
+                    $investmentPool->setAttribute('partners', $partners);
                 }
             }
             
@@ -139,8 +140,93 @@ class InvestmentPool extends Model
         });
 
         static::created(function ($investmentPool) {
-            // Wallet allocations are now handled in the InvestmentPoolResource
-            // to prevent double deduction during creation
+            Log::info('InvestmentPool created event fired', [
+                'pool_id' => $investmentPool->id,
+                'partners' => $investmentPool->partners
+            ]);
+            
+            // Process wallet allocations for partners
+            if (isset($investmentPool->partners) && is_array($investmentPool->partners)) {
+                $partnersData = array_filter($investmentPool->partners, function($partner) {
+                    return !empty($partner['investor_id']) && !empty($partner['investment_amount']);
+                });
+                
+                Log::info('Processing wallet allocations', [
+                    'pool_id' => $investmentPool->id,
+                    'valid_partners' => count($partnersData)
+                ]);
+                
+                foreach ($partnersData as $partner) {
+                    $investorId = intval($partner['investor_id']);
+                    $investmentAmount = floatval($partner['investment_amount']);
+                    
+                    Log::info('Processing partner', [
+                        'investor_id' => $investorId,
+                        'amount' => $investmentAmount
+                    ]);
+                    
+                    if (!$investorId || $investmentAmount <= 0) {
+                        Log::error('Invalid partner data', [
+                            'investor_id' => $investorId,
+                            'amount' => $investmentAmount
+                        ]);
+                        continue;
+                    }
+                    
+                    // Find investor's wallet
+                    $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
+                    
+                    if ($wallet) {
+                        Log::info('Wallet found', [
+                            'wallet_id' => $wallet->id,
+                            'balance' => $wallet->amount
+                        ]);
+                        
+                        // Check if wallet has sufficient balance
+                        if ($wallet->amount < $investmentAmount) {
+                            Log::error('Insufficient funds', [
+                                'investor_id' => $investorId,
+                                'available' => $wallet->amount,
+                                'required' => $investmentAmount
+                            ]);
+                            continue;
+                        }
+                        
+                        try {
+                            // Deduct from wallet
+                            $wallet->amount -= $investmentAmount;
+                            $wallet->save();
+                            
+                            // Create wallet allocation
+                            $allocation = \App\Models\WalletAllocation::create([
+                                'wallet_id' => $wallet->id,
+                                'investor_id' => $investorId,
+                                'investment_pool_id' => $investmentPool->id,
+                                'amount' => $investmentAmount,
+                            ]);
+                            
+                            if ($allocation) {
+                                Log::info('Wallet allocation created successfully', [
+                                    'allocation_id' => $allocation->id,
+                                    'investor_id' => $investorId,
+                                    'amount' => $investmentAmount,
+                                    'pool_id' => $investmentPool->id
+                                ]);
+                            } else {
+                                Log::error('Failed to create allocation', ['investor_id' => $investorId]);
+                            }
+                        } catch (\Exception $e) {
+                            Log::error('Exception during wallet allocation', [
+                                'investor_id' => $investorId,
+                                'error' => $e->getMessage(),
+                                'trace' => $e->getTraceAsString()
+                            ]);
+                        }
+                    } else {
+                        Log::error('Wallet not found for investor', ['investor_id' => $investorId]);
+                    }
+                }
+            }
         });
     }
     
@@ -163,7 +249,7 @@ class InvestmentPool extends Model
     
     public function getRemainingAmountAttribute()
     {
-        return max(0, $this->required_amount - $this->collected_amount);
+        return max(0, $this->amount_required - $this->total_collected);
     }
     
     public function getIsFullyFundedAttribute()
@@ -173,10 +259,10 @@ class InvestmentPool extends Model
     
     public function getPercentageFundedAttribute()
     {
-        if ($this->required_amount <= 0) {
+        if ($this->amount_required <= 0) {
             return 0;
         }
-        return min(100, round(($this->collected_amount / $this->required_amount) * 100, 2));
+        return min(100, round(($this->total_collected / $this->amount_required) * 100, 2));
     }
 
         public function investors()

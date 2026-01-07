@@ -15,7 +15,7 @@ use Filament\Tables\Actions\EditAction;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
-use App\Filament\Resources\Wallet\Forms\WalletForm;
+use App\Filament\Resources\Wallet\Schemas\WalletForm;
 use App\Filament\Resources\Wallet\Pages\EditWallet;
 use App\Filament\Resources\Wallet\Pages\ListWallets;
 use App\Filament\Resources\Wallet\Pages\CreateWallet;

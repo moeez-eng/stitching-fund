@@ -69,15 +69,15 @@ class WalletTable
                                 <!-- Summary Stats -->
                                 <div class="grid grid-cols-3 gap-2 mb-4">
                                     <div class="bg-white/10 rounded-lg p-2 text-center">
-                                        <div class="text-xs opacity-80">Deposited</div>
+                                        <div class="text-xs opacity-80">Lifetime Deposited</div>
                                         <div class="text-sm font-semibold">PKR ' . number_format($record->amount, 0) . '</div>
                                     </div>
                                     <div class="bg-white/10 rounded-lg p-2 text-center">
-                                        <div class="text-xs opacity-80">Invested</div>
+                                        <div class="text-xs opacity-80">Active Invested</div>
                                         <div class="text-sm font-semibold">PKR ' . number_format($totalInvested, 0) . '</div>
                                     </div>
                                     <div class="bg-white/10 rounded-lg p-2 text-center">
-                                        <div class="text-xs opacity-80">Available</div>
+                                        <div class="text-xs opacity-80">Total Returned</div>
                                         <div class="text-sm font-semibold">PKR ' . number_format($availableBalance, 0) . '</div>
                                     </div>
                                 </div>

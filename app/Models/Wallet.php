@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\WalletAllocation;
+use App\Models\WalletLedger;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,7 +16,7 @@ class Wallet extends Model
     protected $fillable = [
         'agency_owner_id',
         'investor_id',
-        'amount',
+        'total_deposits', // Lifetime deposited amount (renamed from amount)
         'slip_type',
         'slip_path',
         'reference',
@@ -23,7 +24,7 @@ class Wallet extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:0',
+        'total_deposits' => 'decimal:2', // Lifetime deposited
         'deposited_at' => 'datetime',
     ];
 
@@ -35,6 +36,46 @@ class Wallet extends Model
                     $wallet->agency_owner_id = Auth::id();
                 } elseif (Auth::user()->role === 'Investor') {
                     $wallet->agency_owner_id = Auth::user()->agency_owner_id;
+                }
+            }
+            
+            // Handle deposit_amount field from form
+            if (isset($wallet->deposit_amount)) {
+                // For new wallet, set total_deposits to deposit_amount
+                $wallet->total_deposits = $wallet->deposit_amount;
+                unset($wallet->deposit_amount);
+            }
+        });
+        
+        static::created(function ($wallet) {
+            // Create initial ledger entry for new wallet
+            if ($wallet->total_deposits > 0) {
+                WalletLedger::createDeposit($wallet, $wallet->total_deposits, "Initial deposit", $wallet->reference);
+            }
+        });
+        
+        static::updating(function ($wallet) {
+            // Handle deposit_amount field for existing wallets
+            if (isset($wallet->deposit_amount)) {
+                $depositAmount = $wallet->deposit_amount;
+                
+                // Add to lifetime deposits
+                $wallet->total_deposits += $depositAmount;
+                
+                // Create ledger entry
+                WalletLedger::createDeposit($wallet, $depositAmount, "Additional deposit", $wallet->reference);
+                
+                unset($wallet->deposit_amount); // Remove virtual field
+            }
+            
+            // Prevent total_deposits from decreasing
+            if ($wallet->isDirty('total_deposits')) {
+                $oldTotal = $wallet->getOriginal('total_deposits');
+                $newTotal = $wallet->total_deposits;
+                
+                if ($newTotal < $oldTotal) {
+                    // Prevent decreasing total_deposits
+                    $wallet->total_deposits = $oldTotal;
                 }
             }
         });
@@ -54,14 +95,35 @@ class Wallet extends Model
     {
         return $this->hasMany(WalletAllocation::class);
     }
-    public function getAvailableBalanceAttribute(): float
+
+    public function ledgers(): HasMany
     {
-        $totalInvested = $this->total_invested;
-        return (float)($this->amount - $totalInvested);
+        return $this->hasMany(WalletLedger::class);
     }
-    public function getTotalInvestedAttribute()
+    public function getLifetimeDepositedAttribute(): float
+    {
+        return (float)($this->total_deposits ?? 0);
+    }
+
+    public function getActiveInvestedAttribute(): float
     {
         return (float)($this->allocations()->sum('amount') ?? 0);
+    }
+
+    public function getTotalReturnedAttribute(): float
+    {
+        // Calculate from ledger entries - sum of all return and profit transactions
+        $returns = $this->ledgers()
+            ->whereIn('type', ['return', 'profit'])
+            ->sum('amount') ?? 0;
+            
+        return (float)$returns;
+    }
+
+    public function getAvailableBalanceAttribute(): float
+    {
+        // Use ledger calculation instead of direct calculation
+        return WalletLedger::getAvailableBalance($this);
     }
 
     public function getWalletStatusAttribute()
@@ -85,5 +147,20 @@ class Wallet extends Model
         return (float)$this->allocations()
             ->whereIn('status', ['invested', 'pending'])
             ->sum('amount');
+    }
+    
+    /**
+     * Add deposit to wallet - only increases total_deposits
+     */
+    public function addDeposit(float $amount): bool
+    {
+        if ($amount <= 0) {
+            return false;
+        }
+        
+        $this->amount += $amount;
+        $this->total_deposits += $amount;
+        
+        return $this->save();
     }
 }

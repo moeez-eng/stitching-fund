@@ -1,0 +1,134 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class WalletLedger extends Model
+{
+    protected $fillable = [
+        'wallet_id',
+        'type',
+        'amount',
+        'description',
+        'reference_type',
+        'reference_id',
+        'reference',
+        'transaction_date',
+    ];
+
+    protected $casts = [
+        'amount' => 'decimal:2',
+        'transaction_date' => 'datetime',
+    ];
+
+    // Transaction types
+    const TYPE_DEPOSIT = 'deposit';
+    const TYPE_INVEST = 'invest';
+    const TYPE_RETURN = 'return';
+    const TYPE_PROFIT = 'profit';
+    const TYPE_WITHDRAWAL = 'withdrawal';
+
+    public function wallet(): BelongsTo
+    {
+        return $this->belongsTo(Wallet::class);
+    }
+
+    /**
+     * Create a deposit entry
+     */
+    public static function createDeposit(Wallet $wallet, float $amount, string $description = null, string $reference = null): self
+    {
+        return static::create([
+            'wallet_id' => $wallet->id,
+            'type' => self::TYPE_DEPOSIT,
+            'amount' => $amount,
+            'description' => $description ?? "Deposit added",
+            'reference' => $reference,
+            'transaction_date' => now(),
+        ]);
+    }
+
+    /**
+     * Create an investment entry
+     */
+    public static function createInvestment(Wallet $wallet, float $amount, WalletAllocation $allocation, string $description = null): self
+    {
+        return static::create([
+            'wallet_id' => $wallet->id,
+            'type' => self::TYPE_INVEST,
+            'amount' => $amount,
+            'description' => $description ?? "Investment in pool " . ($allocation->investmentPool->name ?? '') . "",
+            'reference_type' => 'allocation',
+            'reference_id' => $allocation->id,
+            'transaction_date' => now(),
+        ]);
+    }
+
+    /**
+     * Create a return entry
+     */
+    public static function createReturn(Wallet $wallet, float $amount, string $description = null, string $reference = null): self
+    {
+        return static::create([
+            'wallet_id' => $wallet->id,
+            'type' => self::TYPE_RETURN,
+            'amount' => $amount,
+            'description' => $description ?? "Investment return",
+            'reference' => $reference,
+            'transaction_date' => now(),
+        ]);
+    }
+
+    /**
+     * Create a profit entry
+     */
+    public static function createProfit(Wallet $wallet, float $amount, string $description = null, string $reference = null): self
+    {
+        return static::create([
+            'wallet_id' => $wallet->id,
+            'type' => self::TYPE_PROFIT,
+            'amount' => $amount,
+            'description' => $description ?? "Profit from investment",
+            'reference' => $reference,
+            'transaction_date' => now(),
+        ]);
+    }
+
+    /**
+     * Create a withdrawal entry
+     */
+    public static function createWithdrawal(Wallet $wallet, float $amount, string $description = null, string $reference = null): self
+    {
+        return static::create([
+            'wallet_id' => $wallet->id,
+            'type' => self::TYPE_WITHDRAWAL,
+            'amount' => $amount,
+            'description' => $description ?? "Withdrawal",
+            'reference' => $reference,
+            'transaction_date' => now(),
+        ]);
+    }
+
+    public static function getAvailableBalance(Wallet $wallet): float
+    {
+        $deposits = static::where('wallet_id', $wallet->id)
+            ->where('type', self::TYPE_DEPOSIT)
+            ->sum('amount');
+
+        $investments = static::where('wallet_id', $wallet->id)
+            ->where('type', self::TYPE_INVEST)
+            ->sum('amount');
+
+        $returns = static::where('wallet_id', $wallet->id)
+            ->whereIn('type', [self::TYPE_RETURN, self::TYPE_PROFIT])
+            ->sum('amount');
+
+        $withdrawals = static::where('wallet_id', $wallet->id)
+            ->where('type', self::TYPE_WITHDRAWAL)
+            ->sum('amount');
+
+        return (float)($deposits + $returns - $investments - $withdrawals);
+    }
+}

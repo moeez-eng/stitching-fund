@@ -23,8 +23,10 @@
 
     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $wallets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $wallet): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
         <?php
-            $availableBalance = $wallet->amount - ($wallet->allocations->sum('amount') ?? 0);
-            $totalInvested = $wallet->allocations->sum('amount') ?? 0;
+            $lifetimeDeposited = $wallet->lifetime_deposited;
+            $activeInvested = $wallet->active_invested;
+            $totalReturned = $wallet->total_returned;
+            $availableBalance = $wallet->available_balance;
             
             // Calculate wallet status
             if ($availableBalance > 50000) {
@@ -162,12 +164,17 @@
         </div>
 
         <!-- Interactive Stats Grid -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1.5rem; background: rgba(0, 0, 0, 0.25);">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding: 1.5rem; background: rgba(0, 0, 0, 0.25);">
             <?php
+                $lifetimeDeposited = $wallet->lifetime_deposited;
+                $activeInvested = $wallet->active_invested;
+                $totalReturned = $wallet->total_returned;
+                $availableBalance = $wallet->available_balance;
+                
                 $stats = [
-                    ['Deposited', $wallet->amount, 'trending_up'],
-                    ['Invested', $totalInvested, 'trending_down'],
-                    ['Available', $availableBalance, 'wallet']
+                    ['Lifetime Deposited', $lifetimeDeposited, 'trending_up'],
+                    ['Active Invested', $activeInvested, 'trending_down'],
+                    ['Total Returned', $totalReturned, 'refresh']
                 ];
             ?>
             
@@ -190,6 +197,43 @@
                 </div>
             </div>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            
+            <!-- Invest Request Button for Investors -->
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->user()->role === 'Investor' && $availableBalance > 0): ?>
+            <div style="
+                background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+                border-radius: 0.75rem;
+                padding: 1.2rem;
+                text-align: center;
+                box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+                transition: all 0.3s ease;
+                cursor: pointer;
+            "
+            onmouseover="this.style.background='linear-gradient(135deg, #2563eb, #1e40af)'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(59, 130, 246, 0.4)'"
+            onmouseout="this.style.background='linear-gradient(135deg, #3b82f6, #1d4ed8)'; this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(59, 130, 246, 0.3)'"
+            onclick="alert('Invest Request feature coming soon!')">
+                <div style="font-size: 0.7rem; opacity: 0.9; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem;">Investment</div>
+                <div style="font-size: 1.2rem; font-weight: 700; color: white;">Request Investment</div>
+                <div style="font-size: 0.6rem; opacity: 0.8; margin-top: 0.5rem;">Available: PKR <?php echo e(number_format($availableBalance, 0, ',', ',')); ?></div>
+            </div>
+            <?php else: ?>
+            <!-- Always show 4th column - either button or placeholder -->
+            <div style="
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 0.75rem;
+                padding: 1.2rem;
+                text-align: center;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            ">
+                <?php if(auth()->user() && auth()->user()->role === 'Investor'): ?>
+                    <div style="font-size: 0.7rem; opacity: 0.7; text-transform: uppercase;">No Balance</div>
+                    <div style="font-size: 0.9rem; opacity: 0.8;">Add funds to invest</div>
+                <?php else: ?>
+                    <div style="font-size: 0.7rem; opacity: 0.7; text-transform: uppercase;">Info</div>
+                    <div style="font-size: 0.9rem; opacity: 0.8;">Owner controls</div>
+                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            </div>
+            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
         </div>
 
         <!-- Investment Pools Section -->
@@ -250,18 +294,25 @@
                            
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 0.75rem;">
-                            <div style="text-align: center;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.75rem; overflow-x: auto; white-space: nowrap;">
+                            <div style="text-align: center; min-width: 100px;">
                                 <div style="font-size: 0.7rem; opacity: 0.6;">Your Investments</div>
                                 <div style="font-size: 0.8rem; font-weight: 600; color: <?php echo e($hasInvested ? '#86efac' : '#fbbf24'); ?>;">
                                     <?php echo e($investmentCount); ?> <?php echo e($investmentCount == 1 ? 'time' : 'times'); ?>
 
                                 </div>
                             </div>
-                            <div style="text-align: center;">
+                            <div style="text-align: center; min-width: 80px;">
                                 <div style="font-size: 0.7rem; opacity: 0.6;">Status</div>
-                                <div style="font-size: 0.8rem; font-weight: 600; color: <?php echo e($pool->status == 'open' ? '#86efac' : '#fbbf24'); ?>;">
-                                    <?php echo e($pool->status == 'open' ? 'Active' : 'Closed'); ?>
+                                <div style="font-size: 0.8rem; font-weight: 600; color: <?php echo e($pool->remaining_amount > 0 ? '#86efac' : '#fbbf24'); ?>;">
+                                    <?php echo e($pool->remaining_amount > 0 ? 'Active' : 'Closed'); ?>
+
+                                </div>
+                            </div>
+                            <div style="text-align: center; min-width: 100px;">
+                                <div style="font-size: 0.7rem; opacity: 0.6;">Required</div>
+                                <div style="font-size: 0.8rem; font-weight: 600; color: #86efac;">
+                                    PKR <?php echo e(number_format($pool->amount_required, 0, ',', ',')); ?>
 
                                 </div>
                             </div>

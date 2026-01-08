@@ -155,7 +155,7 @@ class InvestmentPoolForm
                                     // Update all partner fields with equal amounts
                                     for ($i = 0; $i < 6; $i++) {
                                         if ($i < $numberOfPartners) {
-                                            $set("partners.{$i}.investment_amount", number_format($perPartnerAmount, 0, '.', ''));
+                                            $set("partners.{$i}.investment_amount", round($perPartnerAmount, 0));
                                             $set("partners.{$i}.investment_percentage", round(($perPartnerAmount / $amountRequired) * 100, 2));
                                         }
                                     }
@@ -198,7 +198,7 @@ class InvestmentPoolForm
                                     $perPartnerAmount = $amountRequired / $newCount;
                                     
                                     foreach ($currentPartners as $index => $partner) {
-                                        $currentPartners[$index]['investment_amount'] = number_format($perPartnerAmount, 0, '.', '');
+                                        $currentPartners[$index]['investment_amount'] = round($perPartnerAmount, 0);
                                         $currentPartners[$index]['investment_percentage'] = round(100 / $newCount, 2);
                                     }
                                     
@@ -229,6 +229,7 @@ class InvestmentPoolForm
                                 ->schema([
                                     Select::make("partners.{$index}.investor_id")
                                         ->label('Partner Name')
+                                        ->required()
                                         ->options(function () {
                                             $user = Auth::user();
                                             if (!$user) return [];
@@ -260,7 +261,7 @@ class InvestmentPoolForm
                                         ->numeric()
                                         ->prefix('PKR')
                                         ->required()
-                                        ->minValue(0)
+                                        ->minValue(1)
                                         ->step(1)
                                         ->live()
                                         ->reactive()

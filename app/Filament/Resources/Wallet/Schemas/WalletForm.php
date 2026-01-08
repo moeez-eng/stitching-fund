@@ -42,9 +42,11 @@ class WalletForm
                 })
                 ->required()
                 ->searchable(),
-            Forms\Components\TextInput::make('amount')
+            Forms\Components\TextInput::make('deposit_amount')
+                ->label('Deposit Amount')
                 ->numeric()
-                ->required(),
+                ->required()
+                ->helperText('This will be added to lifetime deposits'),
             Forms\Components\Select::make('slip_type')
                 ->options([
                     'bank_transfer' => 'Bank Transfer',
@@ -62,7 +64,8 @@ class WalletForm
                 ->preserveFilenames(),  // Keep original filenames
             Forms\Components\TextInput::make('reference')
                 ->label('Reference/Check #')
-                ->maxLength(255),
+                ->maxLength(255)
+                ->helperText('Optional: Enter reference number or check details'),
             Forms\Components\DatePicker::make('deposited_at')
                 ->label('Deposit Date')
                 ->default(now()),

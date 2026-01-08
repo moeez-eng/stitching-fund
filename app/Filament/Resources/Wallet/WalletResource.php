@@ -10,6 +10,7 @@ use App\Models\Wallet;
 use Filament\Tables\Table;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Actions\EditAction;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,7 +31,27 @@ class WalletResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->schema(WalletForm::schema());
+        return $schema->schema(WalletForm::schema())
+            ->saveUsing(function (Model $record, array $data) {
+                // Handle deposit_amount for both new and existing wallets
+                if (isset($data['deposit_amount'])) {
+                    $depositAmount = $data['deposit_amount'];
+                    unset($data['deposit_amount']); // Remove virtual field
+                    
+                    if ($record->exists) {
+                        // For existing wallets, add to total_deposits
+                        $record->total_deposits += $depositAmount;
+                    } else {
+                        // For new wallets, set total_deposits
+                        $data['total_deposits'] = $depositAmount;
+                    }
+                }
+                
+                $record->fill($data);
+                $record->save();
+                
+                return $record;
+            });
     }
 
     public static function table(Table $table): Table

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Wallet;
+use App\Models\WalletLedger;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,19 +24,19 @@ class WalletAllocation extends Model
 
     protected static function booted()
 {
-    static::saved(function ($allocation) {
-        // Update the wallet's available balance
+    static::created(function ($allocation) {
+        // Create ledger entry for investment
         $wallet = $allocation->wallet;
         if ($wallet) {
-            $wallet->touch(); // This will update the updated_at timestamp
+            WalletLedger::createInvestment($wallet, $allocation->amount, $allocation);
         }
     });
     
     static::deleted(function ($allocation) {
-        // Update the wallet's available balance when an allocation is deleted
+        // Create ledger entry for investment return/cancellation
         $wallet = $allocation->wallet;
         if ($wallet) {
-            $wallet->touch(); // This will update the updated_at timestamp
+            WalletLedger::createReturn($wallet, $allocation->amount, "Investment cancelled/returned");
         }
     });
 }

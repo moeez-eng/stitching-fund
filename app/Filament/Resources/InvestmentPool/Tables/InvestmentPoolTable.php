@@ -30,7 +30,7 @@ class InvestmentPoolTable
 
                 TextColumn::make('amount_required')
                     ->label('Amount Required')
-                    ->money('PKR')
+                    ->formatStateUsing(fn ($state) => 'PKR ' . number_format($state, 0))
                     ->sortable(),
 
                 TextColumn::make('number_of_partners')
@@ -42,7 +42,7 @@ class InvestmentPoolTable
 
                 TextColumn::make('total_collected')
                     ->label('Total Collected')
-                    ->money('PKR')
+                    ->formatStateUsing(fn ($state) => 'PKR ' . number_format($state, 0))
                     ->sortable(),
 
                 TextColumn::make('percentage_collected')
@@ -52,12 +52,12 @@ class InvestmentPoolTable
                         $record->percentage_collected >= 100 ? 'success' : 
                         ($record->percentage_collected >= 50 ? 'warning' : 'danger')
                     )
-                    ->formatStateUsing(fn ($state) => number_format($state, 2) . '%')
+                    ->formatStateUsing(fn ($state) => number_format($state, 0) . '%')
                     ->sortable(),
 
                 TextColumn::make('remaining_amount')
                     ->label('Remaining')
-                    ->money('PKR')
+                    ->formatStateUsing(fn ($state) => 'PKR ' . number_format($state, 0))
                     ->sortable()
                     ->color(fn (InvestmentPool $record): string => 
                         $record->remaining_amount > 0 ? 'warning' : 'success'

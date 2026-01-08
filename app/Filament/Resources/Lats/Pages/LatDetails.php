@@ -88,19 +88,19 @@ class LatDetails extends ViewRecord
 
             Placeholder::make('initial_investment_display')
                 ->label('Initial Investment')
-                ->content(new HtmlString('<div class="font-bold text-primary">PKR ' . number_format($initialInvestment, 2) . '</div>')),
+                ->content(new HtmlString('<div class="font-bold text-primary">PKR ' . number_format($initialInvestment, 0) . '</div>')),
             
             Placeholder::make('materials_total_display')
                 ->label('Materials Cost')
-                ->content(new HtmlString('<div>PKR ' . number_format($materialsTotal, 2) . '</div>')),
+                ->content(new HtmlString('<div>PKR ' . number_format($materialsTotal, 0) . '</div>')),
             
             Placeholder::make('expenses_total_display')
                 ->label('Labor/Expenses')
-                ->content(new HtmlString('<div>PKR ' . number_format($expensesTotal, 2) . '</div>')),
+                ->content(new HtmlString('<div>PKR ' . number_format($expensesTotal, 0) . '</div>')),
             
             Placeholder::make('total_investment_display')
                 ->label('Total Investment')
-                ->content(new HtmlString('<div class="font-bold text-primary">PKR ' . number_format($totalInvestment, 2) . '</div>')),
+                ->content(new HtmlString('<div class="font-bold text-primary">PKR ' . number_format($totalInvestment, 0) . '</div>')),
             
             Placeholder::make('profit_percentage_display')
                 ->label('Profit Percentage')
@@ -108,23 +108,23 @@ class LatDetails extends ViewRecord
             
             Placeholder::make('profit_amount_display')
                 ->label('Profit Amount')
-                ->content(new HtmlString('<div>PKR ' . number_format($profitAmount, 2) . '</div>')),
+                ->content(new HtmlString('<div>PKR ' . number_format($profitAmount, 0) . '</div>')),
             
             Placeholder::make('selling_price_display')
                 ->label('Selling Price')
-                ->content(new HtmlString('<div class="font-bold text-success">PKR ' . number_format($sellingPrice, 2) . '</div>')),
+                ->content(new HtmlString('<div class="font-bold text-success">PKR ' . number_format($sellingPrice, 0) . '</div>')),
             
             Placeholder::make('cost_per_piece_display')
                 ->label('Cost Per Piece')
-                ->content(new HtmlString('<div>PKR ' . number_format($costPerPiece, 2) . '</div>')),
+                ->content(new HtmlString('<div>PKR ' . number_format($costPerPiece, 0) . '</div>')),
             
             Placeholder::make('profit_per_piece_display')
                 ->label('Profit Per Piece')
-                ->content(new HtmlString('<div>PKR ' . number_format($profitPerPiece, 2) . '</div>')),
+                ->content(new HtmlString('<div>PKR ' . number_format($profitPerPiece, 0) . '</div>')),
             
             Placeholder::make('selling_price_per_piece_display')
                 ->label('Selling Price Per Piece')
-                ->content(new HtmlString('<div class="font-bold text-success">PKR ' . number_format($sellingPricePerPiece, 2) . '</div>')),
+                ->content(new HtmlString('<div class="font-bold text-success">PKR ' . number_format($sellingPricePerPiece, 0) . '</div>')),
         ];
     }
 }

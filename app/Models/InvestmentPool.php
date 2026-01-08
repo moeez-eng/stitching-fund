@@ -59,7 +59,7 @@ class InvestmentPool extends Model
                     // Update each partner's investment amount to ensure equal distribution
                     foreach ($partners as $index => $partner) {
                         if (!empty($partner['investor_id'])) {
-                            $partners[$index]['investment_amount'] = number_format($perPartnerAmount, 0, '.', '');
+                            $partners[$index]['investment_amount'] = number_format($perPartnerAmount, 0);
                             $partners[$index]['investment_percentage'] = round(($perPartnerAmount / $amountRequired) * 100, 2);
                         }
                     }
@@ -85,7 +85,7 @@ class InvestmentPool extends Model
                     
                     // Calculate percentage_collected
                     if ($investmentPool->amount_required > 0) {
-                        $investmentPool->percentage_collected = min(100, round(($totalCollected / $investmentPool->amount_required) * 100, 2));
+                        $investmentPool->percentage_collected = (int) min(100, round(($totalCollected / $investmentPool->amount_required) * 100));
                     } else {
                         $investmentPool->percentage_collected = 0;
                     }
@@ -124,7 +124,7 @@ class InvestmentPool extends Model
                     
                     // Calculate percentage_collected
                     if ($investmentPool->amount_required > 0) {
-                        $investmentPool->percentage_collected = min(100, round(($totalCollected / $investmentPool->amount_required) * 100, 2));
+                        $investmentPool->percentage_collected = min(100, round(($totalCollected / $investmentPool->amount_required) * 100, 0));
                     } else {
                         $investmentPool->percentage_collected = 0;
                     }

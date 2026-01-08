@@ -77,7 +77,7 @@ class InvestmentPoolForm
                                         if (isset($partner['investment_amount'])) {
                                             $investmentAmount = floatval($partner['investment_amount']);
                                             if ($wallet->amount < $investmentAmount) {
-                                                $set('_wallet_error', "Insufficient wallet balance for '{$investor->name}'. Available: PKR " . number_format($wallet->amount, 2));
+                                                $set('_wallet_error', "Insufficient wallet balance for '{$investor->name}'. Available: PKR " . number_format($wallet->amount, 0));
                                                 return;
                                             }
                                         }
@@ -286,10 +286,10 @@ class InvestmentPoolForm
                                                 
                                                 if ($walletBalance > 0) {
                                                     if ($investmentAmount > 0 && $investmentAmount > $walletBalance) {
-                                                        return " Insufficient wallet balance. Available: PKR " . number_format($walletBalance, 2);
+                                                        return " Insufficient wallet balance. Available: PKR " . number_format($walletBalance, 0);
                                                     }
                                                     
-                                                    return " Available balance: PKR " . number_format($walletBalance, 2);
+                                                    return " Available balance: PKR " . number_format($walletBalance, 0);
                                                 }
                                                 
                                                 return "Select a partner to see wallet balance";

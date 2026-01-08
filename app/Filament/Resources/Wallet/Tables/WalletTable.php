@@ -62,7 +62,7 @@ class WalletTable
                                 <!-- Balance Display -->
                                 <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4">
                                     <div class="text-sm opacity-90 mb-1">Available Balance</div>
-                                    <div class="text-3xl font-bold mb-1">PKR ' . number_format($availableBalance, 0) . '</div>
+                                    <div class="text-3xl font-bold mb-1">PKR ' . number_format($availableBalance) . '</div>
                                     <div class="text-xs opacity-80">+12.5% this month</div>
                                 </div>
                                 

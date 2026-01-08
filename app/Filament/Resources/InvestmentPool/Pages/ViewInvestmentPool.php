@@ -114,7 +114,7 @@ class ViewInvestmentPool extends ViewRecord
                                         </div>
                                         <div style='display: table-cell; padding: 12px; background: #374151; border-radius: 6px; text-align: center; width: 25%;'>
                                             <div style='color: #9ca3af; font-size: 12px; margin-bottom: 4px;'>Collection Progress</div>
-                                            <div style='color: white; font-size: 16px; font-weight: 600;'>" . number_format($record->percentage_collected, 2) . "%</div>
+                                            <div style='color: white; font-size: 16px; font-weight: 600;'>" . number_format($record->percentage_collected, 0) . "%</div>
                                         </div>
                                         <div style='display: table-cell; padding: 12px; background: #374151; border-radius: 6px; text-align: center; width: 25%;'>
                                             <div style='color: #9ca3af; font-size: 12px; margin-bottom: 4px;'>Remaining Amount</div>

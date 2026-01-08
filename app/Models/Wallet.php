@@ -23,7 +23,7 @@ class Wallet extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'amount' => 'decimal:0',
         'deposited_at' => 'datetime',
     ];
 
@@ -56,7 +56,8 @@ class Wallet extends Model
     }
     public function getAvailableBalanceAttribute(): float
     {
-        return (float)$this->amount;
+        $totalInvested = $this->total_invested;
+        return (float)($this->amount - $totalInvested);
     }
     public function getTotalInvestedAttribute()
     {

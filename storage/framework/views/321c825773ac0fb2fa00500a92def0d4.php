@@ -140,7 +140,7 @@
                 color: #22c55e;
                 animation: countUp 1.5s ease-out;
             " data-target="<?php echo e($availableBalance); ?>">
-                PKR <?php echo e(number_format($availableBalance. 0)); ?>
+                PKR <?php echo e(number_format($availableBalance, 0, ',', ',')); ?>
 
             </div>
             <div style="
@@ -184,8 +184,8 @@
             onmouseover="this.style.background='rgba(255, 255, 255, 0.08)'; this.style.transform='scale(1.05)'"
             onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.transform='scale(1)'">
                 <div style="font-size: 0.7rem; opacity: 0.7; letter-spacing: 0.1em; text-transform: uppercase;"><?php echo e($stat[0]); ?></div>
-                <div style="font-size: 1.2rem; font-weight: 700; margin-top: 0.5rem; font-family: 'Roboto Mono', monospace;">
-                    PKR <?php echo e(number_format($stat[1], 0)); ?>
+                <div style="font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; line-height: 1.2;">
+                    PKR <?php echo e(number_format($stat[1], 0, ',', ',')); ?>
 
                 </div>
             </div>
@@ -221,7 +221,7 @@
                     "
                     onmouseover="this.style.background='rgba(255, 255, 255, 0.08)'; this.style.transform='translateY(-2px)'"
                     onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.transform='translateY(0)'"
-                    onclick="investInPool(<?php echo e($pool->id); ?>, '<?php echo e($pool->name); ?>', <?php echo e($pool->minimum_investment ?? 10000); ?>)">
+                    onclick="window.location.href='<?php echo e(route('filament.admin.resources.investment-pool.investment-pools.view', $pool->id)); ?>'">
                         
                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($hasInvested): ?>
                         <div style="

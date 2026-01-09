@@ -24,14 +24,6 @@ class WalletAllocation extends Model
 
     protected static function booted()
 {
-    static::created(function ($allocation) {
-        // Create ledger entry for investment
-        $wallet = $allocation->wallet;
-        if ($wallet) {
-            WalletLedger::createInvestment($wallet, $allocation->amount, $allocation);
-        }
-    });
-    
     static::deleted(function ($allocation) {
         // Create ledger entry for investment return/cancellation
         $wallet = $allocation->wallet;

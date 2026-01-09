@@ -70,12 +70,32 @@ class InvestmentPoolTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Pool Status')
+                    ->options([
+                        \App\Models\InvestmentPool::STATUS_OPEN => 'Open (Available for Investment)',
+                        \App\Models\InvestmentPool::STATUS_ACTIVE => 'Active (Fully Funded)',
+                        \App\Models\InvestmentPool::STATUS_CLOSED => 'Closed',
+                    ])
+                    ->query(function ($query, $data) {
+                        $value = $data['value'] ?? null;
+                        if ($value === \App\Models\InvestmentPool::STATUS_OPEN) {
+                            return $query->where('status', \App\Models\InvestmentPool::STATUS_OPEN);
+                        } elseif ($value === \App\Models\InvestmentPool::STATUS_ACTIVE) {
+                            return $query->where('status', \App\Models\InvestmentPool::STATUS_ACTIVE);
+                        } elseif ($value === \App\Models\InvestmentPool::STATUS_CLOSED) {
+                            return $query->where('status', \App\Models\InvestmentPool::STATUS_CLOSED);
+                        }
+                        return $query;
+                    })
+                    ->searchable(),
+
                 Tables\Filters\SelectFilter::make('lat_id')
                     ->label('Lot Number')
                     ->relationship('lat', 'lat_no')
                     ->searchable(),
 
-                Tables\Filters\Filter::make('status')
+                Tables\Filters\Filter::make('fully_collected')
                     ->label('Fully Collected')
                     ->query(fn ($query) => $query->where('percentage_collected', '>=', 100)),
 

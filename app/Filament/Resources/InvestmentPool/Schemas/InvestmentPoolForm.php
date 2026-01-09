@@ -76,8 +76,8 @@ class InvestmentPoolForm
                                         // Check if investment amount exceeds wallet balance
                                         if (isset($partner['investment_amount'])) {
                                             $investmentAmount = floatval($partner['investment_amount']);
-                                            if ($wallet->amount < $investmentAmount) {
-                                                $set('_wallet_error', "Insufficient wallet balance for '{$investor->name}'. Available: PKR " . number_format($wallet->amount, 0));
+                                            if ($wallet->available_balance < $investmentAmount) {
+                                                $set('_wallet_error', "Insufficient wallet balance for '{$investor->name}'. Available: PKR " . number_format($wallet->available_balance, 0));
                                                 return;
                                             }
                                         }
@@ -250,7 +250,7 @@ class InvestmentPoolForm
                                         ->afterStateUpdated(function ($state, callable $set, callable $get) use ($index) {
                                             if ($state) {
                                                 $wallet = \App\Models\Wallet::where('investor_id', $state)->first();
-                                                $set("partners.{$index}.wallet_balance", $wallet ? $wallet->amount : 0);
+                                                $set("partners.{$index}.wallet_balance", $wallet ? $wallet->available_balance : 0);
                                             } else {
                                                 $set("partners.{$index}.wallet_balance", 0);
                                             }
@@ -311,8 +311,8 @@ class InvestmentPoolForm
                                                         }
                                                         
                                                         $amount = floatval($value);
-                                                        if ($amount > 0 && $amount > $wallet->amount) {
-                                                            $fail("Insufficient wallet balance. Available: PKR " . number_format($wallet->amount, 2));
+                                                        if ($amount > 0 && $amount > $wallet->available_balance) {
+                                                            $fail("Insufficient wallet balance. Available: PKR " . number_format($wallet->available_balance, 2));
                                                         }
                                                     }
                                                 };
@@ -325,7 +325,7 @@ class InvestmentPoolForm
                                                 $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
                                                 if ($wallet) {
                                                     $amount = floatval($state);
-                                                    if ($amount > 0 && $amount > $wallet->amount) {
+                                                    if ($amount > 0 && $amount > $wallet->available_balance) {
                                                         $set("partners.{$index}.investment_percentage", 0);
                                                         return;
                                                     }
@@ -345,6 +345,7 @@ class InvestmentPoolForm
                                         ->numeric()
                                         ->suffix('%')
                                         ->required()
+                                        ->debounce(300)
                                         ->default(0),
                                 
                                     // Hidden field to store wallet balance

@@ -42,7 +42,7 @@ class WalletForm
                 })
                 ->required()
                 ->searchable(),
-            Forms\Components\TextInput::make('deposit_amount')
+            Forms\Components\TextInput::make('total_deposits')
                 ->label('Deposit Amount')
                 ->numeric()
                 ->required()

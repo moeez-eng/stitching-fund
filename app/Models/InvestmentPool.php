@@ -38,6 +38,7 @@ class InvestmentPool extends Model
 
     public const STATUS_DRAFT = 'draft';
     public const STATUS_OPEN = 'open';
+    public const STATUS_ACTIVE = 'active';
     public const STATUS_FULLY_FUNDED = 'fully_funded';
     public const STATUS_CLOSED = 'closed';
 
@@ -91,19 +92,26 @@ class InvestmentPool extends Model
                                     // Calculate the difference to adjust the wallet balance
                                     $amountDifference = $originalAmount - $newAmount;
                                     
-                                    // Update wallet balance
-                                    $wallet->amount += $amountDifference;
-                                    $wallet->save();
-                                    
-                                    // Update allocation amount
+                                    // Update wallet allocation
                                     $allocation->amount = $newAmount;
                                     $allocation->save();
+                                    
+                                    // Create ledger entry for the adjustment
+                                    if ($amountDifference != 0) {
+                                        if ($amountDifference > 0) {
+                                            // Return money to wallet
+                                            \App\Models\WalletLedger::createReturn($wallet, abs($amountDifference), "Investment adjustment for pool #{$investmentPool->id}");
+                                        } else {
+                                            // Deduct additional money from wallet
+                                            \App\Models\WalletLedger::createInvestment($wallet, abs($amountDifference), $allocation, "Additional investment for pool #{$investmentPool->id}");
+                                        }
+                                    }
                                     
                                     Log::info('Updated wallet allocation', [
                                         'investor_id' => $investorId,
                                         'old_amount' => $originalAmount,
                                         'new_amount' => $newAmount,
-                                        'wallet_balance' => $wallet->amount
+                                        'wallet_balance' => $wallet->available_balance
                                     ]);
                                 }
                             }
@@ -124,6 +132,13 @@ class InvestmentPool extends Model
                 
                 // Calculate remaining_amount
                 $investmentPool->remaining_amount = max(0, $investmentPool->amount_required - $totalCollected);
+                
+                // Update status based on remaining amount
+                if ($investmentPool->remaining_amount > 0) {
+                    $investmentPool->status = self::STATUS_OPEN; // Still needs money
+                } else {
+                    $investmentPool->status = self::STATUS_ACTIVE; // Fully funded, no need to add money
+                }
             } else {
                 $investmentPool->total_collected = 0;
                 $investmentPool->percentage_collected = 0;
@@ -172,6 +187,14 @@ class InvestmentPool extends Model
                     $investmentPool->total_collected = $totalCollected;
                     $investmentPool->percentage_collected = (int) min(100, round(($totalCollected / $amountRequired) * 100));
                     $investmentPool->remaining_amount = max(0, $amountRequired - $totalCollected);
+                    
+                    // Update status based on remaining amount
+                    if ($investmentPool->remaining_amount > 0) {
+                        $investmentPool->status = self::STATUS_OPEN;
+                    } else {
+                        $investmentPool->status = self::STATUS_ACTIVE;
+                    }
+                    
                     $investmentPool->saveQuietly();
                 }
             }
@@ -230,27 +253,26 @@ class InvestmentPool extends Model
                         ]);
                         
                         // Check if wallet has sufficient balance
-                        if ($wallet->amount < $investmentAmount) {
+                        if ($wallet->available_balance < $investmentAmount) {
                             Log::error('Insufficient funds', [
                                 'investor_id' => $investorId,
-                                'available' => $wallet->amount,
+                                'available' => $wallet->available_balance,
                                 'required' => $investmentAmount
                             ]);
                             continue;
                         }
                         
                         try {
-                            // Deduct from wallet
-                            $wallet->amount -= $investmentAmount;
-                            $wallet->save();
-                            
-                            // Create wallet allocation
+                            // Create wallet allocation first
                             $allocation = \App\Models\WalletAllocation::create([
                                 'wallet_id' => $wallet->id,
                                 'investor_id' => $investorId,
                                 'investment_pool_id' => $investmentPool->id,
                                 'amount' => $investmentAmount,
                             ]);
+                            
+                            // Then create ledger entry using the allocation
+                            \App\Models\WalletLedger::createInvestment($wallet, $allocation->amount, $allocation, "Investment in pool #{$investmentPool->id}");
                             
                             if ($allocation) {
                                 Log::info('Wallet allocation created successfully', [

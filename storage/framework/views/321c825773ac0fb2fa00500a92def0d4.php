@@ -16,7 +16,16 @@
     <?php
         $wallets = $this->getWalletData();
         $user = Auth::user();
-        $pools = InvestmentPool::where('status', 'open')->get();
+        
+        // Get all pools with their status
+        $allPools = InvestmentPool::all();
+        $pools = $allPools; // Default to showing all pools
+        $statusFilter = request()->query('pool_status', 'all');
+        
+        // Apply status filter if selected
+        if ($statusFilter !== 'all') {
+            $pools = $pools->where('status', $statusFilter);
+        }
     ?>
 
     <div wire:poll.5s="loadData" style="max-width: 1200px; margin: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; padding: 1rem;">
@@ -237,17 +246,54 @@
         </div>
 
         <!-- Investment Pools Section -->
-        <div style="padding: 1.5rem; background: rgba(0, 0, 0, 0.15);">
+        <div style="padding: 1.5rem; background: rgba(0, 0, 0, 0.15);" x-data="{ statusFilter: 'all' }">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7;">Available Investment Pools</div>
-                <div style="font-size: 0.75rem; opacity: 0.8;">
-                    <span style="color: #86efac; font-weight: 600;"><?php echo e($pools->count()); ?></span> Total Pools
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7;">Investment Pools</div>
+                    <div style="position: relative; display: inline-block; margin-top: 0.5rem;">
+                        <select x-model="statusFilter" style="
+                            background: rgba(0, 0, 0, 0.3);
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            color: white;
+                            padding: 0.25rem 1.5rem 0.25rem 0.75rem;
+                            border-radius: 0.5rem;
+                            font-size: 0.7rem;
+                            -webkit-appearance: none;
+                            -moz-appearance: none;
+                            appearance: none;
+                            cursor: pointer;
+                        ">
+                            <option value="all">All Statuses</option>
+                            <option value="open">Open</option>
+                            <option value="active">Active</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                        <div style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); pointer-events: none;">
+                            <svg width="12" height="12" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4 6H11L7.5 10.5L4 6Z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;">
+                    <span style="color: rgba(0, 0, 0, 0.3; font-weight: 600;"><?php echo e($pools->count()); ?></span> Pools
                 </div>
             </div>
             
             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($pools) && $pools->count() > 0): ?>
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div x-init="
+                    $store.pools = <?php echo e(json_encode($pools->map(function($pool) {
+                        return [
+                            'id' => $pool->id,
+                            'status' => $pool->status,
+                            // Add other pool properties you need in the template
+                        ];
+                    }))); ?>;
+                "></div>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;"
+                     x-show="$store.pools.some(pool => statusFilter === 'all' || pool.status === statusFilter)">
                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $pools->take(3); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $pool): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <div x-show="statusFilter === 'all' || '<?php echo e($pool->status); ?>' === statusFilter"
                     <?php
                         // Get actual investment count for this pool
                         $investmentCount = $wallet->allocations->where('investment_pool_id', $pool->id)->count();
@@ -357,6 +403,10 @@
                         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                </div>
+                <div x-show="!$store.pools.some(pool => statusFilter === 'all' || pool.status === statusFilter)" 
+                     style="text-align: center; padding: 1rem; color: #9ca3af; font-size: 0.875rem;">
+                    No pools found with the selected filter.
                 </div>
                 
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($pools->count() > 3): ?>

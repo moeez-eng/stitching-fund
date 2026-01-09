@@ -28,6 +28,7 @@ class ListWallets extends Page
     public $availableBalance;
     public $totalInvested;
     public $user;
+    public $poolStatus = 'all'; // 'all', 'open', 'active', or 'closed'
 
     public function getTitle(): string
     {
@@ -53,10 +54,20 @@ class ListWallets extends Page
     {
         $user = Auth::user();
         
-        // Cache investment pools for better performance
-        $pools = Cache::remember('investment_pools_open', 300, function () {
-            return InvestmentPool::where('status', 'open')->get();
+        // Get all pools with their status
+        $pools = Cache::remember('investment_pools_all', 300, function () {
+            return InvestmentPool::all();
         });
+        
+        // Filter pools based on status if not 'all'
+        if ($this->poolStatus !== 'all') {
+            $pools = $pools->filter(function ($pool) {
+                return $pool->status === $this->poolStatus;
+            });
+        }
+        
+        // Store the filtered pools in a view variable
+        view()->share('pools', $pools);
         
         if ($user->role === 'Investor') {
             // Single investor view
@@ -88,5 +99,11 @@ class ListWallets extends Page
     {
         // This method is called by wire:poll every 5 seconds
         // The data will be refreshed in the view automatically
+    }
+    
+    public function updatedPoolStatus($value)
+    {
+        // This method will be called when the pool status filter changes
+        // The view will automatically update with the filtered pools
     }
 }

@@ -203,8 +203,7 @@ class InvestmentPoolResource extends Resource
                 $inviter = \App\Models\User::find($invitedBy);
                 
                 if ($inviter && $inviter->role === 'Agency Owner') {
-                    return $query->where('user_id', $invitedBy)
-                               ->whereIn('status', ['open', 'active']);
+                    return $query->where('user_id', $invitedBy); // Show all pools (open, active, closed)
                 } else {
                     Log::warning('Investor has invalid inviter', [
                         'investor_id' => $user->id,
@@ -324,6 +323,204 @@ class InvestmentPoolResource extends Resource
         }
         
         return $record;
+    }
+    
+    protected static function handleRecordUpdate(Model $record, array $data): Model
+    {
+        Log::info('handleRecordUpdate called', ['pool_id' => $record->id, 'data_keys' => array_keys($data)]);
+        
+        // Process partners data similar to creation
+        $partnersData = [];
+        if (isset($data['partners']) && is_array($data['partners'])) {
+            $partnersData = array_filter($data['partners'], function($partner) {
+                return !empty($partner['investor_id']) && !empty($partner['investment_amount']);
+            });
+        } else {
+            // Try to build partners array from individual fields
+            $partnersData = [];
+            for ($i = 0; $i < 6; $i++) {
+                $investorId = $data["partners.{$i}.investor_id"] ?? null;
+                $investmentAmount = $data["partners.{$i}.investment_amount"] ?? null;
+                $investmentPercentage = $data["partners.{$i}.investment_percentage"] ?? null;
+                
+                if ($investorId && $investmentAmount) {
+                    $partnersData[] = [
+                        'investor_id' => $investorId,
+                        'investment_amount' => $investmentAmount,
+                        'investment_percentage' => $investmentPercentage,
+                    ];
+                }
+            }
+        }
+        
+        Log::info('Processed partners data for update', ['count' => count($partnersData), 'data' => $partnersData]);
+        
+        DB::beginTransaction();
+        try {
+            // Store old partners for comparison
+            $oldPartners = $record->partners ?? [];
+            $oldPartnerMap = [];
+            foreach ($oldPartners as $partner) {
+                if (!empty($partner['investor_id'])) {
+                    $oldPartnerMap[$partner['investor_id']] = $partner;
+                }
+            }
+            
+            // Update the investment pool with new data
+            $record->update($data);
+            
+            // Update partners data
+            if (!empty($partnersData)) {
+                $record->partners = $partnersData;
+                $record->save();
+                
+                // Process wallet allocation changes
+                $allocationResults = self::processWalletAllocationUpdates($record, $partnersData, $oldPartnerMap);
+                
+                Log::info('processWalletAllocationUpdates completed', [
+                    'success_count' => count($allocationResults['success']),
+                    'error_count' => count($allocationResults['errors']),
+                    'results' => $allocationResults
+                ]);
+                
+                // Show notifications
+                if (!empty($allocationResults['success'])) {
+                    $successMessage = 'Wallet updates successful: ' . implode(', ', $allocationResults['success']);
+                    session()->flash('success', $successMessage);
+                }
+                
+                if (!empty($allocationResults['errors'])) {
+                    $errorMessage = 'Wallet update errors: ' . implode(', ', $allocationResults['errors']);
+                    session()->flash('error', $errorMessage);
+                }
+            }
+            
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error updating investment pool', ['error' => $e->getMessage()]);
+            throw $e;
+        }
+        
+        return $record;
+    }
+    
+    /**
+     * Process wallet allocation updates for edited investment pool
+     */
+    private static function processWalletAllocationUpdates($record, $newPartners, $oldPartnerMap)
+    {
+        $results = [
+            'success' => [],
+            'errors' => []
+        ];
+        
+        // Get existing allocations for this pool
+        $existingAllocations = \App\Models\WalletAllocation::where('investment_pool_id', $record->id)
+            ->get()
+            ->keyBy('investor_id');
+        
+        $newPartnerMap = [];
+        foreach ($newPartners as $partner) {
+            if (!empty($partner['investor_id'])) {
+                $newPartnerMap[$partner['investor_id']] = $partner;
+            }
+        }
+        
+        // Process updates and new allocations
+        foreach ($newPartners as $partner) {
+            $investorId = intval($partner['investor_id']);
+            $newAmount = floatval($partner['investment_amount']);
+            $oldAmount = 0;
+            
+            // Get old amount if existed
+            if (isset($oldPartnerMap[$investorId])) {
+                $oldAmount = floatval($oldPartnerMap[$investorId]['investment_amount'] ?? 0);
+            }
+            
+            // Find investor's wallet
+            $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
+            
+            if (!$wallet) {
+                $results['errors'][] = "Investor {$investorId}: Wallet not found";
+                continue;
+            }
+            
+            $existingAllocation = $existingAllocations->get($investorId);
+            
+            if ($existingAllocation) {
+                // Update existing allocation
+                $amountDifference = $newAmount - $oldAmount;
+                
+                if ($amountDifference != 0) {
+                    // Check if we need to deduct more or return money
+                    if ($amountDifference > 0) {
+                        // Need to deduct more
+                        if ($wallet->available_balance < $amountDifference) {
+                            $results['errors'][] = "Investor {$investorId}: Insufficient funds for additional investment (Available: PKR {$wallet->available_balance}, Required: PKR {$amountDifference})";
+                            continue;
+                        }
+                        
+                        // Create additional investment ledger entry
+                        \App\Models\WalletLedger::createInvestment($wallet, $amountDifference, $existingAllocation, "Additional investment for pool #{$record->id}");
+                        $results['success'][] = "Investor {$investorId}: Additional PKR {$amountDifference} invested";
+                    } else {
+                        // Need to return money
+                        $returnAmount = abs($amountDifference);
+                        \App\Models\WalletLedger::createReturn($wallet, $returnAmount, "Investment reduction for pool #{$record->id}");
+                        $results['success'][] = "Investor {$investorId}: PKR {$returnAmount} returned to wallet";
+                    }
+                    
+                    // Update allocation amount
+                    $existingAllocation->amount = $newAmount;
+                    $existingAllocation->save();
+                }
+            } elseif ($newAmount > 0) {
+                // New allocation for this investor
+                if ($wallet->available_balance < $newAmount) {
+                    $results['errors'][] = "Investor {$investorId}: Insufficient funds (Available: PKR {$wallet->available_balance}, Required: PKR {$newAmount})";
+                    continue;
+                }
+                
+                // Create new allocation
+                $allocation = \App\Models\WalletAllocation::create([
+                    'wallet_id' => $wallet->id,
+                    'investor_id' => $investorId,
+                    'investment_pool_id' => $record->id,
+                    'amount' => $newAmount,
+                ]);
+                
+                // Create investment ledger entry
+                \App\Models\WalletLedger::createInvestment($wallet, $newAmount, $allocation, "Investment in pool #{$record->id}");
+                
+                $results['success'][] = "Investor {$investorId}: PKR {$newAmount} invested";
+            }
+        }
+        
+        // Handle removed investors (return their money)
+        foreach ($oldPartnerMap as $investorId => $oldPartner) {
+            if (!isset($newPartnerMap[$investorId])) {
+                $existingAllocation = $existingAllocations->get($investorId);
+                
+                if ($existingAllocation) {
+                    $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
+                    
+                    if ($wallet) {
+                        $returnAmount = floatval($existingAllocation->amount);
+                        
+                        // Return money to wallet
+                        \App\Models\WalletLedger::createReturn($wallet, $returnAmount, "Investment cancelled for pool #{$record->id}");
+                        
+                        // Delete allocation
+                        $existingAllocation->delete();
+                        
+                        $results['success'][] = "Investor {$investorId}: PKR {$returnAmount} returned (investment cancelled)";
+                    }
+                }
+            }
+        }
+        
+        return $results;
     }
     
     /**

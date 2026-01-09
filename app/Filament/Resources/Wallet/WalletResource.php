@@ -10,7 +10,6 @@ use App\Models\Wallet;
 use Filament\Tables\Table;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Actions\EditAction;
 use Illuminate\Database\Eloquent\Builder;
@@ -31,27 +30,7 @@ class WalletResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->schema(WalletForm::schema())
-            ->saveUsing(function (Model $record, array $data) {
-                // Handle deposit_amount for both new and existing wallets
-                if (isset($data['deposit_amount'])) {
-                    $depositAmount = $data['deposit_amount'];
-                    unset($data['deposit_amount']); // Remove virtual field
-                    
-                    if ($record->exists) {
-                        // For existing wallets, add to total_deposits
-                        $record->total_deposits += $depositAmount;
-                    } else {
-                        // For new wallets, set total_deposits
-                        $data['total_deposits'] = $depositAmount;
-                    }
-                }
-                
-                $record->fill($data);
-                $record->save();
-                
-                return $record;
-            });
+        return $schema->schema(WalletForm::schema());
     }
 
     public static function table(Table $table): Table
@@ -114,9 +93,13 @@ class WalletResource extends Resource
             return $query->where('agency_owner_id', $user->id);
         }
         
-        // Investor sees only their own wallets
+        // Investor sees all wallets from their agency (same as investment pools)
         if ($user->role === 'Investor') {
-            return $query->where('investor_id', $user->id);
+            if ($user->invited_by) {
+                return $query->where('agency_owner_id', $user->invited_by);
+            } else {
+                return $query->whereRaw('1 = 0'); // No valid inviter
+            }
         }
         
         return $query->whereRaw('1 = 0');
@@ -168,8 +151,8 @@ class WalletResource extends Resource
         // Agency Owner can view wallets from their agency
         if ($user->role === 'Agency Owner' && $record->agency_owner_id === $user->id) return true;
         
-        // Investor can view their own wallets
-        if ($user->role === 'Investor' && $record->investor_id === $user->id) return true;
+        // Investor can view wallets from their agency (same as query logic)
+        if ($user->role === 'Investor' && $user->invited_by && $record->agency_owner_id === $user->invited_by) return true;
         
         return false;
     }

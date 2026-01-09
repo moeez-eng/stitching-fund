@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\WalletAllocation;
 use App\Models\WalletLedger;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ class Wallet extends Model
     protected $fillable = [
         'agency_owner_id',
         'investor_id',
-        'total_deposits', // Lifetime deposited amount (renamed from amount)
+        'total_deposits', 
         'slip_type',
         'slip_path',
         'reference',
@@ -39,33 +40,30 @@ class Wallet extends Model
                 }
             }
             
-            // Handle deposit_amount field from form
-            if (isset($wallet->deposit_amount)) {
-                // For new wallet, set total_deposits to deposit_amount
-                $wallet->total_deposits = $wallet->deposit_amount;
-                unset($wallet->deposit_amount);
+            // Handle total_deposits field from form
+            if (isset($wallet->total_deposits)) {
+                // total_deposits is already the correct field, no need to reassign
             }
         });
         
         static::created(function ($wallet) {
             // Create initial ledger entry for new wallet
+            Log::info('Wallet created event fired', ['wallet_id' => $wallet->id, 'total_deposits' => $wallet->total_deposits]);
+            
             if ($wallet->total_deposits > 0) {
-                WalletLedger::createDeposit($wallet, $wallet->total_deposits, "Initial deposit", $wallet->reference);
+                try {
+                    WalletLedger::createDeposit($wallet, $wallet->total_deposits, "Initial deposit", $wallet->reference);
+                    Log::info('Ledger entry created for wallet', ['wallet_id' => $wallet->id]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create ledger entry', ['error' => $e->getMessage(), 'wallet_id' => $wallet->id]);
+                }
             }
         });
         
         static::updating(function ($wallet) {
-            // Handle deposit_amount field for existing wallets
-            if (isset($wallet->deposit_amount)) {
-                $depositAmount = $wallet->deposit_amount;
-                
-                // Add to lifetime deposits
-                $wallet->total_deposits += $depositAmount;
-                
-                // Create ledger entry
-                WalletLedger::createDeposit($wallet, $depositAmount, "Additional deposit", $wallet->reference);
-                
-                unset($wallet->deposit_amount); // Remove virtual field
+            // Handle total_deposits field for existing wallets
+            if (isset($wallet->total_deposits)) {
+                // total_deposits is already the correct field, no additional logic needed
             }
             
             // Prevent total_deposits from decreasing

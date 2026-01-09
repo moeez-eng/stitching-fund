@@ -52,98 +52,123 @@ class InvestmentPool extends Model
         });
 
         static::updating(function ($investmentPool) {
-            // Get the original model data before update
-            $originalPartners = $investmentPool->getOriginal('partners');
+            // Logic moved to updated() hook to prevent double-deduction issues
+        });
+
+        static::updated(function ($investmentPool) {
+            // Only process if partners field was actually changed
+            if (!$investmentPool->wasChanged('partners')) {
+                return;
+            }
+            
             $newPartners = $investmentPool->partners;
             
-            // Calculate total_collected from partners
-            if (isset($newPartners) && is_array($newPartners)) {
-                $totalCollected = 0;
-                
-                // Process each partner to update wallet allocations
-                foreach ($newPartners as $index => $partner) {
-                    if (!empty($partner['investor_id']) && isset($partner['investment_amount'])) {
-                        $investorId = intval($partner['investor_id']);
-                        $newAmount = floatval($partner['investment_amount']);
-                        $originalAmount = 0;
-                        
-                        // Find the original amount if this partner existed before
-                        if (is_array($originalPartners)) {
-                            foreach ($originalPartners as $originalPartner) {
-                                if (isset($originalPartner['investor_id']) && 
-                                    intval($originalPartner['investor_id']) === $investorId) {
-                                    $originalAmount = floatval($originalPartner['investment_amount'] ?? 0);
-                                    break;
-                                }
-                            }
-                        }
-                        
-                        // If amount changed, update the wallet allocation
-                        if ($newAmount != $originalAmount) {
-                            $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
-                            
-                            if ($wallet) {
-                                $allocation = \App\Models\WalletAllocation::where([
-                                    'investor_id' => $investorId,
-                                    'investment_pool_id' => $investmentPool->id
-                                ])->first();
-                                
-                                if ($allocation) {
-                                    // Calculate the difference to adjust the wallet balance
-                                    $amountDifference = $originalAmount - $newAmount;
-                                    
-                                    // Update wallet allocation
-                                    $allocation->amount = $newAmount;
-                                    $allocation->save();
-                                    
-                                    // Create ledger entry for the adjustment
-                                    if ($amountDifference != 0) {
-                                        if ($amountDifference > 0) {
-                                            // Return money to wallet
-                                            \App\Models\WalletLedger::createReturn($wallet, abs($amountDifference), "Investment adjustment for pool #{$investmentPool->id}");
-                                        } else {
-                                            // Deduct additional money from wallet
-                                            \App\Models\WalletLedger::createInvestment($wallet, abs($amountDifference), $allocation, "Additional investment for pool #{$investmentPool->id}");
-                                        }
-                                    }
-                                    
-                                    Log::info('Updated wallet allocation', [
-                                        'investor_id' => $investorId,
-                                        'old_amount' => $originalAmount,
-                                        'new_amount' => $newAmount,
-                                        'wallet_balance' => $wallet->available_balance
-                                    ]);
-                                }
-                            }
-                        }
-                        
-                        $totalCollected += $newAmount;
-                    }
-                }
-                
-                $investmentPool->total_collected = $totalCollected;
-                
-                // Calculate percentage_collected
-                if ($investmentPool->amount_required > 0) {
-                    $investmentPool->percentage_collected = min(100, round(($totalCollected / $investmentPool->amount_required) * 100, 0));
-                } else {
-                    $investmentPool->percentage_collected = 0;
-                }
-                
-                // Calculate remaining_amount
-                $investmentPool->remaining_amount = max(0, $investmentPool->amount_required - $totalCollected);
-                
-                // Update status based on remaining amount
-                if ($investmentPool->remaining_amount > 0) {
-                    $investmentPool->status = self::STATUS_OPEN; // Still needs money
-                } else {
-                    $investmentPool->status = self::STATUS_ACTIVE; // Fully funded, no need to add money
-                }
-            } else {
-                $investmentPool->total_collected = 0;
-                $investmentPool->percentage_collected = 0;
-                $investmentPool->remaining_amount = $investmentPool->amount_required ?? 0;
+            if (!isset($newPartners) || !is_array($newPartners)) {
+                return;
             }
+            
+            // Process each partner for rebalancing
+            foreach ($newPartners as $partner) {
+                if (empty($partner['investor_id']) || !isset($partner['investment_amount'])) {
+                    continue;
+                }
+                
+                $investorId = intval($partner['investor_id']);
+                $newAmount = floatval($partner['investment_amount']);
+                
+                // Find existing wallet allocation (source of truth)
+                $allocation = \App\Models\WalletAllocation::where([
+                    'investor_id' => $investorId,
+                    'investment_pool_id' => $investmentPool->id
+                ])->first();
+                
+                if (!$allocation) {
+                    // Skip if no allocation exists - don't create new ones on update
+                    continue;
+                }
+                
+                // Calculate difference
+                $difference = $newAmount - $allocation->amount;
+                
+                if ($difference == 0) {
+                    // No change needed
+                    continue;
+                }
+                
+                $wallet = \App\Models\Wallet::where('investor_id', $investorId)->first();
+                if (!$wallet) {
+                    continue;
+                }
+                
+                // Update allocation amount first
+                $oldAmount = $allocation->amount;
+                $allocation->amount = $newAmount;
+                $allocation->save();
+                
+                // Handle the difference
+                if ($difference > 0) {
+                    // Amount increased: move money from Available → ActiveInvested
+                    // Record as normal investment
+                    \App\Models\WalletLedger::createInvestment(
+                        $wallet, 
+                        $difference, 
+                        $allocation, 
+                        "Additional investment for pool #{$investmentPool->id}"
+                    );
+                    
+                    Log::info('Pool edit - amount increased', [
+                        'pool_id' => $investmentPool->id,
+                        'investor_id' => $investorId,
+                        'old_amount' => $oldAmount,
+                        'new_amount' => $newAmount,
+                        'difference' => $difference,
+                        'type' => 'investment'
+                    ]);
+                } else {
+                    // Amount decreased: move money from ActiveInvested → Available
+                    // Use pool adjustment type (does NOT affect total_returned)
+                    \App\Models\WalletLedger::createPoolAdjustment(
+                        $wallet, 
+                        abs($difference), 
+                        "Pool adjustment - investment reduced for pool #{$investmentPool->id}"
+                    );
+                    
+                    Log::info('Pool edit - amount decreased', [
+                        'pool_id' => $investmentPool->id,
+                        'investor_id' => $investorId,
+                        'old_amount' => $oldAmount,
+                        'new_amount' => $newAmount,
+                        'difference' => $difference,
+                        'type' => 'pool_adjustment'
+                    ]);
+                }
+            }
+            
+            // Update pool totals based on wallet allocations (source of truth)
+            $totalCollected = \App\Models\WalletAllocation::where('investment_pool_id', $investmentPool->id)
+                ->sum('amount');
+            
+            $investmentPool->total_collected = $totalCollected;
+            
+            // Calculate percentage_collected
+            if ($investmentPool->amount_required > 0) {
+                $investmentPool->percentage_collected = min(100, round(($totalCollected / $investmentPool->amount_required) * 100, 0));
+            } else {
+                $investmentPool->percentage_collected = 0;
+            }
+            
+            // Calculate remaining_amount
+            $investmentPool->remaining_amount = max(0, $investmentPool->amount_required - $totalCollected);
+            
+            // Update status based on remaining amount
+            if ($investmentPool->remaining_amount > 0) {
+                $investmentPool->status = self::STATUS_OPEN;
+            } else {
+                $investmentPool->status = self::STATUS_ACTIVE;
+            }
+            
+            // Save without firing events again
+            $investmentPool->saveQuietly();
         });
 
         static::created(function ($investmentPool) {

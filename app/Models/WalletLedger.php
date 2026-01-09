@@ -29,6 +29,7 @@ class WalletLedger extends Model
     const TYPE_RETURN = 'return';
     const TYPE_PROFIT = 'profit';
     const TYPE_WITHDRAWAL = 'withdrawal';
+    const TYPE_POOL_ADJUSTMENT = 'pool_adjustment';
 
     public function wallet(): BelongsTo
     {
@@ -111,6 +112,21 @@ class WalletLedger extends Model
         ]);
     }
 
+    /**
+     * Create a pool adjustment entry (for rebalancing during pool edits)
+     */
+    public static function createPoolAdjustment(Wallet $wallet, float $amount, string $description = null, string $reference = null): self
+    {
+        return static::create([
+            'wallet_id' => $wallet->id,
+            'type' => self::TYPE_POOL_ADJUSTMENT,
+            'amount' => $amount,
+            'description' => $description ?? "Pool adjustment",
+            'reference' => $reference,
+            'transaction_date' => now(),
+        ]);
+    }
+
     public static function getAvailableBalance(Wallet $wallet): float
     {
         $deposits = static::where('wallet_id', $wallet->id)
@@ -129,6 +145,10 @@ class WalletLedger extends Model
             ->where('type', self::TYPE_WITHDRAWAL)
             ->sum('amount');
 
-        return (float)($deposits + $returns - $investments - $withdrawals);
+        $poolAdjustments = static::where('wallet_id', $wallet->id)
+            ->where('type', self::TYPE_POOL_ADJUSTMENT)
+            ->sum('amount');
+
+        return (float)($deposits + $returns + $poolAdjustments - $investments - $withdrawals);
     }
 }

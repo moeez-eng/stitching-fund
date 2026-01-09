@@ -87,11 +87,6 @@ class UserInvitationResource extends Resource
                             ->required()
                             ->default(fn() => Carbon::now()->addDays(7))
                             ->label('Invitation Expires'),
-
-                        Forms\Components\Placeholder::make('preview_link')
-                            ->label('Invitation Link Preview')
-                            ->content(fn($get) => route('filament.admin.auth.register') . '?invitation=' . $get('unique_code'))
-                            ->columnSpanFull(),
                     ])
                     ->columns(2),
             ]);
@@ -167,6 +162,7 @@ class UserInvitationResource extends Resource
                 Action::make('resend')
                     ->label('Resend Email')
                     ->icon('heroicon-o-paper-airplane')
+                    ->visible(fn (UserInvitation $record) => ! $record->isAccepted())
                     ->action(function (UserInvitation $record) {
                         try {
                             Mail::to($record->email)->send(new InvestorInvitationMail($record));
@@ -184,7 +180,29 @@ class UserInvitationResource extends Resource
                             Log::error('Failed to resend invitation email: ' . $e->getMessage());
                         }
                     })
-                    ->visible(fn(?UserInvitation $record) => $record?->isValid() ?? false),
+                ,
+                 Action::make('copy_link')
+                         ->label('Copy link')
+                         ->icon('heroicon-o-clipboard-document')
+                         ->visible(fn (UserInvitation $record) => $record->isValid())
+                         ->action(function (UserInvitation $record, $livewire) {
+
+                                $link = $record->getInvitationLink();
+
+                                // Execute JavaScript to copy the URL and show a notification
+                                $livewire->js("
+                                    navigator.clipboard.writeText('{$link}').then(() => {
+                                        \$tooltip('Link copied!', { timeout: 1500 });
+                                    });
+                                ");
+
+                                \Filament\Notifications\Notification::make()
+                                 ->title('Invitation link copied!')
+                                 ->body($link)
+                                 ->success()
+                                 ->send();
+                }),
+
                 EditAction::make(),
                 DeleteAction::make(),
             ])
@@ -209,4 +227,5 @@ class UserInvitationResource extends Resource
             'edit' => \App\Filament\Resources\UserInvitation\Pages\EditUserInvitation::route('/{record}/edit'),
         ];
     }
+
 }

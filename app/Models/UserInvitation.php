@@ -132,4 +132,12 @@ class UserInvitation extends Model
     {
         return $this->status === 'accepted' || $this->accepted_at !== null;
     }
+
+    /**
+     * Get the full invitation link for registration
+     */
+    public function getInvitationLink(): string
+    {
+        return route('filament.admin.auth.register') . '?invitation=' . $this->unique_code;
+    }
 }

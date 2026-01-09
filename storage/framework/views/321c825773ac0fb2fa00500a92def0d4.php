@@ -17,8 +17,8 @@
         $wallets = $this->getWalletData();
         $user = Auth::user();
         
-        // Get all pools with their status
-        $allPools = InvestmentPool::all();
+        // Get all pools with their status - sort by latest first
+        $allPools = InvestmentPool::orderBy('created_at', 'desc')->get();
         $pools = $allPools; // Default to showing all pools
         $statusFilter = request()->query('pool_status', 'all');
         
@@ -252,21 +252,26 @@
                     <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7;">Investment Pools</div>
                     <div style="position: relative; display: inline-block; margin-top: 0.5rem;">
                         <select x-model="statusFilter" style="
-                            background: rgba(0, 0, 0, 0.3);
-                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            background: linear-gradient(145deg, #1e1b4b 0%, #581c87 50%, #8b5cf6 100%);
+                            border: 1px solid rgba(139, 92, 246, 0.35);
                             color: white;
                             padding: 0.25rem 1.5rem 0.25rem 0.75rem;
                             border-radius: 0.5rem;
                             font-size: 0.7rem;
+                            font-weight: 500;
                             -webkit-appearance: none;
                             -moz-appearance: none;
                             appearance: none;
                             cursor: pointer;
-                        ">
-                            <option value="all">All Statuses</option>
-                            <option value="open">Open</option>
-                            <option value="active">Active</option>
-                            <option value="closed">Closed</option>
+                            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+                            transition: all 0.3s ease;
+                        "
+                        onmouseover="this.style.background='linear-gradient(145deg, #2e1b5b 0%, #682c97 50%, #9b6cf7 100%)'; this.style.borderColor='rgba(159, 108, 247, 0.45)'; this.style.boxShadow='0 0 25px rgba(139, 92, 246, 0.3)'"
+                        onmouseout="this.style.background='linear-gradient(145deg, #1e1b4b 0%, #581c87 50%, #8b5cf6 100%)'; this.style.borderColor='rgba(139, 92, 246, 0.35)'; this.style.boxShadow='0 0 20px rgba(139, 92, 246, 0.2)'">
+                            <option value="all" style="background-color: #581c87; color: white;">All</option>
+                            <option value="open" style="background-color: #581c87; color: white;">Open</option>
+                            <option value="active" style="background-color: #581c87; color: white;">Active</option>
+                            <option value="closed" style="background-color: #581c87; color: white;">Closed</option>
                         </select>
                         <div style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); pointer-events: none;">
                             <svg width="12" height="12" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -351,10 +356,11 @@
                             <div style="text-align: center; min-width: 80px;">
                                 <div style="font-size: 0.7rem; opacity: 0.6;">Status</div>
                                 <div style="font-size: 0.8rem; font-weight: 600; color: <?php echo e($pool->remaining_amount > 0 ? '#86efac' : '#fbbf24'); ?>;">
-                                    <?php echo e($pool->remaining_amount > 0 ? 'Active' : 'Closed'); ?>
+                                    <?php echo e($pool->remaining_amount > 0 ? 'Open' : 'Active'); ?>
 
                                 </div>
                             </div>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($pool->remaining_amount > 0): ?>
                             <div style="text-align: center; min-width: 100px;">
                                 <div style="font-size: 0.7rem; opacity: 0.6;">Required</div>
                                 <div style="font-size: 0.8rem; font-weight: 600; color: #86efac;">
@@ -362,6 +368,14 @@
 
                                 </div>
                             </div>
+                            <?php else: ?>
+                            <div style="text-align: center; min-width: 100px;">
+                                <div style="font-size: 0.7rem; opacity: 0.6;">Status</div>
+                                <div style="font-size: 0.8rem; font-weight: 600; color: #22c55e;">
+                                    Pool requirement amount is complete
+                                </div>
+                            </div>
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </div>
                         
                         <div style="margin-top: 0.75rem;">
@@ -382,25 +396,12 @@
                                     height: 100%;
                                     background: linear-gradient(90deg, #8b5cf6, #a78bfa);
                                     border-radius: 2px;
-                                    width: <?php echo e(min($totalInvestedInPool / ($pool->target_amount ?? 1000000) * 100, 100)); ?>%;
+                                    width: <?php echo e(min($totalInvestedInPool / ($pool->amount_required ?? 1000000) * 100, 100)); ?>%;
                                     transition: width 0.3s ease;
                                 "></div>
                             </div>
                         </div>
                         
-                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($hasInvested): ?>
-                        <div style="
-                            margin-top: 0.75rem;
-                            padding: 0.5rem;
-                            background: rgba(34, 197, 94, 0.1);
-                            border: 1px solid rgba(34, 197, 94, 0.2);
-                            border-radius: 0.375rem;
-                            text-align: center;
-                        ">
-                            <div style="font-size: 0.75rem; color: #86efac; font-weight: 600;">Active Investment</div>
-                            <div style="font-size: 0.7rem; opacity: 0.8; margin-top: 0.25rem;">Last investment: <?php echo e($wallet->allocations->where('investment_pool_id', $pool->id)->sortByDesc('created_at')->first()?->created_at->format('M j, Y') ?? 'Unknown'); ?></div>
-                        </div>
-                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </div>
@@ -439,6 +440,12 @@
                     <div style="font-size: 0.875rem; opacity: 0.7;">No active investment pools available</div>
                     <div style="font-size: 0.75rem; opacity: 0.5; margin-top: 0.5rem;">Check back later for new opportunities</div>
                 </div>
+            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($wallet->allocations->count() > 0): ?>
+            <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 0.5rem; text-align: center;">
+                <div style="font-size: 0.8rem; color: #86efac; font-weight: 600;">Last investment: <?php echo e($wallet->allocations->sortByDesc('created_at')->first()?->created_at->format('M j, Y') ?? 'Unknown'); ?></div>
+            </div>
             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
         </div>
 

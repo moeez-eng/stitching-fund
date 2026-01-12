@@ -28,7 +28,7 @@
         }
     ?>
 
-    <div wire:poll.5s="loadData" style="max-width: 1200px; margin: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; padding: 1rem;">
+    <div id="walletContainer" style="max-width: 1200px; margin: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; padding: 1rem;">
 
     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $wallets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $wallet): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
         <?php
@@ -221,6 +221,7 @@
                     box-shadow: 0 4px 15px rgba(107, 70, 193, 0.3);
                     transition: all 0.3s ease;
                     cursor: pointer;
+                    margin-bottom: 0.5rem;
                 "
                onmouseover="this.style.background='linear-gradient(135deg, #553c9a, #44337a)'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(107, 70, 193, 0.4)'"
                 onmouseout="this.style.background='linear-gradient(135deg, #6b46c1, #553c9a)'; this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(107, 70, 193, 0.3)'"
@@ -237,13 +238,36 @@
                     box-shadow: 0 4px 15px rgba(107, 70, 193, 0.3);
                     transition: all 0.3s ease;
                     cursor: pointer;
+                    margin-bottom: 0.5rem;
                 "
                 onmouseover="this.style.background='linear-gradient(135deg, #553c9a, #44337a)'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(107, 70, 193, 0.4)'"
                 onmouseout="this.style.background='linear-gradient(135deg, #6b46c1, #553c9a)'; this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(107, 70, 193, 0.3)'"
-                onclick="alert('Withdraw Request feature coming soon!')">
+                onclick="openWithdrawModal(<?php echo e($wallet->id); ?>, '<?php echo e(auth()->user()->name); ?>', <?php echo e(auth()->id()); ?>, <?php echo e($availableBalance); ?>)">
                     <div style="font-size: 1.2rem; font-weight: 700; color: white;">Request Withdraw</div>
+                    <?php
+                        $lastRequest = $wallet->withdrawalRequests()->latest()->first();
+                    ?>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($lastRequest): ?>
+                        <div style="font-size: 0.7rem; color: rgba(255, 255, 255, 0.8); margin-top: 0.5rem;">
+                            Last: <?php echo e($lastRequest->created_at->format('d M Y')); ?>
+
+                            <span style="
+                                padding: 0.2rem 0.4rem; 
+                                border-radius: 0.25rem; 
+                                font-size: 0.65rem;
+                                font-weight: 600;
+                                background: <?php echo e($lastRequest->status === 'pending' ? '#fbbf24' : ($lastRequest->status === 'approved' ? '#22c55e' : '#ef4444')); ?>;
+                                color: <?php echo e($lastRequest->status === 'pending' ? '#92400e' : ($lastRequest->status === 'approved' ? '#166534' : '#991b1b')); ?>;
+                                margin-left: 0.25rem;
+                            ">
+                                <?php echo e(ucfirst($lastRequest->status)); ?>
+
+                            </span>
+                        </div>
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </div>
-            </div>
+                
+                </div>
             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
         <!-- Investment Pools Section -->
@@ -532,6 +556,60 @@
 
     </div>
 
+    <!-- Withdraw Request Modal -->
+    <div id="withdrawModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+        <div style="background: linear-gradient(145deg, #1e1b4b 0%, #581c87 50%, #8b5cf6 100%); padding: 2rem; border-radius: 1rem; max-width: 400px; width: 90%;">
+            <h3 style="color: white; margin-bottom: 1rem;">Request Withdrawal</h3>
+            
+            <form id="withdrawForm" onsubmit="submitWithdrawRequest(event)">
+                <!-- Hidden fields -->
+                <input type="hidden" id="wallet_id" name="wallet_id">
+                <input type="hidden" id="investor_id" name="investor_id">
+                <input type="hidden" id="investor_name" name="investor_name">
+                
+                <!-- Amount field -->
+                <div style="margin-bottom: 1rem;">
+                    <label style="color: white; display: block; margin-bottom: 0.5rem;">Amount (PKR)</label>
+                    <input type="number" id="requested_amount" name="requested_amount" 
+                           style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid rgba(139, 92, 246, 0.3); background: rgba(255,255,255,0.1); color: white;"
+                           step="100" required>
+                    <small id="availableBalance" style="color: #a78bfa;">Available: PKR 0</small>
+                </div>
+                
+                <!-- Buttons -->
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" style="flex: 1; padding: 0.75rem; background: #22c55e; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
+                        Submit Request
+                    </button>
+                    <button type="button" onclick="closeWithdrawModal()" style="flex: 1; padding: 0.75rem; background: #ef4444; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Owner Notification for Pending Requests -->
+    <?php if(auth()->user()->role === 'Agency Owner'): ?>
+        <?php
+            $pendingRequests = \App\Models\WithdrawalRequest::where('status', 'pending')->count();
+        ?>
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($pendingRequests > 0): ?>
+            <div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+                <div style="
+                    background: #ef4444;
+                    color: white;
+                    padding: 0.5rem 1rem;
+                    border-radius: 0.5rem;
+                    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+                    animation: pulse 2s infinite;
+                ">
+                    <strong>🔔 <?php echo e($pendingRequests); ?> Withdrawal Request<?php echo e($pendingRequests > 1 ? 's' : ''); ?> Pending</strong>
+                </div>
+            </div>
+        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+
         <!-- CSS Animations -->
         <style>
             @keyframes pulseGlow {
@@ -539,11 +617,106 @@
                 50% { opacity: 0.8; }
             }
             
+            @keyframes pulse {
+                0%, 100% { opacity: 1; transform: scale(1); }
+                50% { opacity: 0.8; transform: scale(1.05); }
+            }
+            
             .wallet-card {
                 min-width: unset !important;
             }
+        </style>
+
+    <script>
+        let currentWalletId = null;
+        let currentAvailableBalance = 0;
+
+        function openWithdrawModal(walletId, investorName, investorId, availableBalance) {
+            currentWalletId = walletId;
+            currentAvailableBalance = availableBalance;
+            
+            document.getElementById('wallet_id').value = walletId;
+            document.getElementById('investor_id').value = investorId;
+            document.getElementById('investor_name').value = investorName;
+            document.getElementById('availableBalance').textContent = 'Available: PKR ' + availableBalance.toLocaleString();
+            document.getElementById('requested_amount').max = availableBalance;
+            document.getElementById('withdrawModal').style.display = 'flex';
+            
+            // Prevent page refresh while modal is open
+            window.beforeunload = function(e) {
+                if (document.getElementById('withdrawModal').style.display === 'flex') {
+                    e.preventDefault();
+                    e.returnValue = '';
+                    return '';
+                }
+            };
         }
-    </style>
+
+        function closeWithdrawModal() {
+            document.getElementById('withdrawModal').style.display = 'none';
+            document.getElementById('withdrawForm').reset();
+            
+            // Remove beforeunload listener when modal is closed
+            window.onbeforeunload = null;
+        }
+
+        function submitWithdrawRequest(event) {
+            event.preventDefault();
+            
+            console.log('Submit function called'); // Debug log
+            
+            const formData = new FormData(document.getElementById('withdrawForm'));
+            const amount = parseFloat(formData.get('requested_amount'));
+            
+            if (amount > currentAvailableBalance) {
+                alert('Requested amount cannot exceed available balance');
+                return;
+            }
+            
+            // Disable submit button to prevent double submission
+            const submitBtn = document.querySelector('#withdrawForm button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            
+            fetch('/wallet/withdraw-request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    wallet_id: formData.get('wallet_id'),
+                    investor_id: formData.get('investor_id'),
+                    investor_name: formData.get('investor_name'),
+                    requested_amount: amount
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Response received:', data); // Debug log
+                if (data.success) {
+                    alert('Withdrawal request submitted successfully!');
+                    closeWithdrawModal();
+                    // Remove auto-reload completely - let user close manually
+                    // setTimeout(() => {
+                    //     location.reload();
+                    // }, 2000);
+                } else {
+                    alert('Error: ' + data.message);
+                    // Re-enable button on error
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Request';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to submit request');
+                // Re-enable button on error
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Request';
+            });
+        }
+    </script>
  <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal166a02a7c5ef5a9331faf66fa665c256)): ?>

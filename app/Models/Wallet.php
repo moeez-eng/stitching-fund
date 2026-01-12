@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\WalletAllocation;
 use App\Models\WalletLedger;
+use App\Models\WithdrawalRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
@@ -98,6 +99,11 @@ class Wallet extends Model
     {
         return $this->hasMany(WalletLedger::class);
     }
+
+    public function withdrawalRequests(): HasMany
+    {
+        return $this->hasMany(WithdrawalRequest::class);
+    }
     public function getLifetimeDepositedAttribute(): float
     {
         return (float)($this->total_deposits ?? 0);
@@ -122,6 +128,18 @@ class Wallet extends Model
     {
         // Use ledger calculation instead of direct calculation
         return WalletLedger::getAvailableBalance($this);
+    }
+    
+    /**
+     * Refresh the available balance (clear any cache)
+     */
+    public function refreshAvailableBalance(): float
+    {
+        // Clear any cached balance
+        unset($this->attributes['available_balance']);
+        
+        // Recalculate from ledger
+        return $this->available_balance;
     }
 
     public function getWalletStatusAttribute()

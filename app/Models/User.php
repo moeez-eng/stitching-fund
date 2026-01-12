@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Notifications\NewUserWaitingApproval;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -28,6 +29,18 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'remember_token',
     ];
+
+    protected static function booted()
+    {
+        static::created(function ($user) {
+            // Send notification to all Super Admin users when a new user is created
+            $superAdmins = self::where('role', 'Super Admin')->get();
+            
+            foreach ($superAdmins as $admin) {
+                $admin->notify(new NewUserWaitingApproval($user));
+            }
+        });
+    }
 
     public function canAccessPanel(\Filament\Panel $panel): bool
     {

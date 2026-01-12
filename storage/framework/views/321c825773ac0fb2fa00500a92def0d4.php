@@ -173,7 +173,7 @@
         </div>
 
         <!-- Interactive Stats Grid -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding: 1.5rem; background: rgba(0, 0, 0, 0.25);">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1.5rem; background: rgba(0, 0, 0, 0.25);">
             <?php
                 $lifetimeDeposited = $wallet->lifetime_deposited;
                 $activeInvested = $wallet->active_invested;
@@ -207,43 +207,44 @@
             </div>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             
-            <!-- Invest Request Button for Investors -->
+          
+        </div>
+          <!-- Invest/Withdraw Request Buttons for Investors -->
             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->user()->role === 'Investor' && $availableBalance > 0): ?>
-            <div style="
-                background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-                border-radius: 0.75rem;
-                padding: 1.2rem;
-                text-align: center;
-                box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-                transition: all 0.3s ease;
-                cursor: pointer;
-            "
-            onmouseover="this.style.background='linear-gradient(135deg, #2563eb, #1e40af)'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(59, 130, 246, 0.4)'"
-            onmouseout="this.style.background='linear-gradient(135deg, #3b82f6, #1d4ed8)'; this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(59, 130, 246, 0.3)'"
-            onclick="alert('Invest Request feature coming soon!')">
-                <div style="font-size: 0.7rem; opacity: 0.9; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem;">Investment</div>
-                <div style="font-size: 1.2rem; font-weight: 700; color: white;">Request Investment</div>
-                <div style="font-size: 0.6rem; opacity: 0.8; margin-top: 0.5rem;">Available: PKR <?php echo e(number_format($availableBalance, 0, ',', ',')); ?></div>
-            </div>
-            <?php else: ?>
-            <!-- Always show 4th column - either button or placeholder -->
-            <div style="
-                background: rgba(255, 255, 255, 0.05);
-                border-radius: 0.75rem;
-                padding: 1.2rem;
-                text-align: center;
-                border: 1px solid rgba(255, 255, 255, 0.1);
-            ">
-                <?php if(auth()->user() && auth()->user()->role === 'Investor'): ?>
-                    <div style="font-size: 0.7rem; opacity: 0.7; text-transform: uppercase;">No Balance</div>
-                    <div style="font-size: 0.9rem; opacity: 0.8;">Add funds to invest</div>
-                <?php else: ?>
-                    <div style="font-size: 0.7rem; opacity: 0.7; text-transform: uppercase;">Info</div>
-                    <div style="font-size: 0.9rem; opacity: 0.8;">Owner controls</div>
-                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            <div style="display: flex; gap: 1rem; padding: 1.5rem; background: rgba(0, 0, 0, 0.25); border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                <div style="
+                    flex: 1;
+                    background: linear-gradient(135deg, #6b46c1, #553c9a);
+                    border-radius: 0.75rem;
+                    padding: 1.2rem;
+                    text-align: center;
+                    box-shadow: 0 4px 15px rgba(107, 70, 193, 0.3);
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                "
+               onmouseover="this.style.background='linear-gradient(135deg, #553c9a, #44337a)'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(107, 70, 193, 0.4)'"
+                onmouseout="this.style.background='linear-gradient(135deg, #6b46c1, #553c9a)'; this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(107, 70, 193, 0.3)'"
+                onclick="alert('Invest Request feature coming soon!')">
+                    <div style="font-size: 1.2rem; font-weight: 700; color: white;">Request Investment</div>
+                </div>
+                
+                <div style="
+                    flex: 1;
+                    background: linear-gradient(135deg, #6b46c1, #553c9a);
+                    border-radius: 0.75rem;
+                    padding: 1.2rem;
+                    text-align: center;
+                    box-shadow: 0 4px 15px rgba(107, 70, 193, 0.3);
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                "
+                onmouseover="this.style.background='linear-gradient(135deg, #553c9a, #44337a)'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(107, 70, 193, 0.4)'"
+                onmouseout="this.style.background='linear-gradient(135deg, #6b46c1, #553c9a)'; this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(107, 70, 193, 0.3)'"
+                onclick="alert('Withdraw Request feature coming soon!')">
+                    <div style="font-size: 1.2rem; font-weight: 700; color: white;">Request Withdraw</div>
+                </div>
             </div>
             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-        </div>
 
         <!-- Investment Pools Section -->
         <div style="padding: 1.5rem; background: rgba(0, 0, 0, 0.15);" x-data="{ statusFilter: 'all' }">
@@ -294,11 +295,12 @@
                             // Add other pool properties you need in the template
                         ];
                     }))); ?>;
+                    $store.showAllPools = false;
                 "></div>
                 <div style="display: flex; flex-direction: column; gap: 0.75rem;"
                      x-show="$store.pools.some(pool => statusFilter === 'all' || pool.status === statusFilter)">
-                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $pools->take(3); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $pool): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <div x-show="statusFilter === 'all' || '<?php echo e($pool->status); ?>' === statusFilter"
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $pools; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $pool): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <div x-show="(<?php echo e($index); ?> < 3 || $store.showAllPools) && (statusFilter === 'all' || '<?php echo e($pool->status); ?>' === statusFilter)"
                     <?php
                         // Get actual investment count for this pool
                         $investmentCount = $wallet->allocations->where('investment_pool_id', $pool->id)->count();
@@ -370,9 +372,9 @@
                             </div>
                             <?php else: ?>
                             <div style="text-align: center; min-width: 100px;">
-                                <div style="font-size: 0.7rem; opacity: 0.6;">Status</div>
+                                <div style="font-size: 0.9rem; font-weight: 600; color: #22c55e;">Pool requirement</div>
                                 <div style="font-size: 0.8rem; font-weight: 600; color: #22c55e;">
-                                    Pool requirement amount is complete
+                                     amount is complete
                                 </div>
                             </div>
                             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
@@ -410,22 +412,29 @@
                     No pools found with the selected filter.
                 </div>
                 
-                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($pools->count() > 3): ?>
+                <?php
+                    $visiblePools = $pools->filter(function($pool) {
+                        return request('statusFilter', 'all') === 'all' || $pool->status === request('statusFilter');
+                    });
+                ?>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($visiblePools->count() > 3): ?>
                 <div style="text-align: center; margin-top: 1rem;">
-                    <button style="
-                        padding: 0.5rem 1rem;
-                        border-radius: 0.5rem;
-                        background: rgba(139, 92, 246, 0.2);
-                        border: 1px solid rgba(139, 92, 246, 0.3);
-                        color: #a78bfa;
-                        font-size: 0.875rem;
-                        font-weight: 500;
-                        cursor: pointer;
-                        transition: all 0.2s ease;
-                    "
-                    onmouseover="this.style.background='rgba(139, 92, 246, 0.3)'"
-                    onmouseout="this.style.background='rgba(139, 92, 246, 0.2)'">
-                        View All Pools (<?php echo e($pools->count() - 3); ?> more)
+                    <button 
+                        x-text="$store.showAllPools ? 'Show Less' : 'View All Pools (' + (<?php echo e($visiblePools->count()); ?> - 3) + ' more)'"
+                        @click="$store.showAllPools = !$store.showAllPools"
+                        style="
+                            padding: 0.5rem 1rem;
+                            border-radius: 0.5rem;
+                            background: rgba(139, 92, 246, 0.2);
+                            border: 1px solid rgba(139, 92, 246, 0.3);
+                            color: #a78bfa;
+                            font-size: 0.875rem;
+                            font-weight: 500;
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                        "
+                        onmouseover="this.style.background='rgba(139, 92, 246, 0.3)'"
+                        onmouseout="this.style.background='rgba(139, 92, 246, 0.2)'">
                     </button>
                 </div>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
@@ -468,7 +477,7 @@
                     border-radius: 0.5rem;
                     padding: 1rem;
                 ">
-                    <div style="font-size: 0.875rem; opacity: 0.7; margin-bottom: 0.5rem;">Pools Invested In</div>
+                    <div style="font-size: 0.875rem; opacity: 0.7; margin-bottom: 0.5rem;">You Invested In Pools</div>
                     <div style="font-size: 1.25rem; font-weight: 700; color: #86efac;">
                         <?php echo e($wallet->allocations->pluck('investment_pool_id')->unique()->count()); ?>
 
@@ -513,7 +522,7 @@
             onmouseover="this.style.background='linear-gradient(135deg, #7c3aed, #6d28d9)'; this.style.transform='translateY(-2px)'"
             onmouseout="this.style.background='linear-gradient(135deg, #8b5cf6, #7c3aed)'; this.style.transform='translateY(0)'"
             onclick="window.location.href='<?php echo e(\App\Filament\Resources\Wallet\WalletResource::getUrl('index')); ?>'">
-                View Details
+               Transuction History 
             </div>
         </div>
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
+use App\Notifications\PoolCreatedNotification;
 
 class InvestmentPool extends Model
 {
@@ -176,6 +177,13 @@ class InvestmentPool extends Model
                 'pool_id' => $investmentPool->id,
                 'partners' => $investmentPool->partners
             ]);
+            
+            // Send notification to all investors when a new pool is created
+            $investors = \App\Models\User::where('role', 'Investor')->get();
+            
+            foreach ($investors as $investor) {
+                $investor->notify(new PoolCreatedNotification($investmentPool));
+            }
             
             // Calculate and ensure equal distribution of investment amounts
             if (isset($investmentPool->partners) && is_array($investmentPool->partners) && isset($investmentPool->amount_required)) {

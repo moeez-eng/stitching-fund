@@ -20,6 +20,16 @@ class CheckUserStatus
         if (Auth::check()) {
             $user = Auth::user();
             
+            // Send login notification only once per session
+            if (!session()->has('login_notification_sent')) {
+                Notification::make()
+                    ->title('Welcome back!')
+                    ->body('You have successfully logged in to the dashboard')
+                    ->success()
+                    ->sendToDatabase($user);
+                session()->put('login_notification_sent', true);
+            }
+            
             // Check if user is inactive
             if ($user->status === 'inactive') {
                 // Send notification using Filament's notification system

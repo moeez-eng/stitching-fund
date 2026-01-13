@@ -3,14 +3,16 @@
 namespace App\Models;
 
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Traits\HasRoles;
+use Filament\Notifications\Notification;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Models\Contracts\FilamentUser;
+use App\Notifications\NewUserWaitingApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use App\Notifications\NewUserWaitingApproval;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -30,17 +32,7 @@ class User extends Authenticatable implements FilamentUser
         'remember_token',
     ];
 
-    protected static function booted()
-    {
-        static::created(function ($user) {
-            // Send notification to all Super Admin users when a new user is created
-            $superAdmins = self::where('role', 'Super Admin')->get();
-            
-            foreach ($superAdmins as $admin) {
-                $admin->notify(new NewUserWaitingApproval($user));
-            }
-        });
-    }
+    // No boot method needed - notifications handled in CreateUsers page
 
     public function canAccessPanel(\Filament\Panel $panel): bool
     {
@@ -162,5 +154,23 @@ class User extends Authenticatable implements FilamentUser
     public function investors()
     {
         return $this->hasMany(User::class, 'agency_owner_id');
+    }
+    protected static function booted()
+    {
+        static::saved(function ($user) {
+            // Send notification when new user is created with inactive status
+            if ($user->status === 'inactive' && ($user->wasRecentlyCreated || $user->wasChanged('status'))) {
+                
+                $superAdmin = User::where('role', 'Super Admin')->first();
+
+                if ($superAdmin) {
+                    Notification::make()
+                        ->title('New User Registration')
+                        ->body("New user '{$user->name}' has registered and needs approval.")
+                        ->warning()
+                        ->sendToDatabase($superAdmin);
+                }
+            }
+        });
     }
 }

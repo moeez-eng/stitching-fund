@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Users\Pages;
 
 use App\Filament\Resources\Users\UsersResource;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Notifications\Notification;
+use App\Models\User;
 
 class CreateUsers extends CreateRecord
 {
@@ -20,4 +22,6 @@ class CreateUsers extends CreateRecord
         
         return $data;
     }
+
+   
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Filament\Notifications\Notification;
 
 class WalletLedger extends Model
 {
@@ -22,6 +23,58 @@ class WalletLedger extends Model
         'amount' => 'decimal:2',
         'transaction_date' => 'datetime',
     ];
+
+    protected static function booted()
+    {
+        static::created(function ($ledger) {
+            $wallet = $ledger->wallet;
+            $investor = $wallet->investor;
+            
+            if (!$investor) return;
+            
+            switch ($ledger->type) {
+                case self::TYPE_DEPOSIT:
+                    Notification::make()
+                        ->title('Deposit Successful')
+                        ->body("Your wallet has been credited with {$ledger->amount}.")
+                        ->success()
+                        ->sendToDatabase($investor);
+                    break;
+                    
+                case self::TYPE_INVEST:
+                    Notification::make()
+                        ->title('Investment Processed')
+                        ->body("Investment of {$ledger->amount} has been processed.")
+                        ->warning()
+                        ->sendToDatabase($investor);
+                    break;
+                    
+                case self::TYPE_RETURN:
+                    Notification::make()
+                        ->title('Investment Returned')
+                        ->body("Amount of {$ledger->amount} has been returned to your wallet.")
+                        ->success()
+                        ->sendToDatabase($investor);
+                    break;
+                    
+                case self::TYPE_PROFIT:
+                    Notification::make()
+                        ->title('Profit Received')
+                        ->body("Profit of {$ledger->amount} has been added to your wallet.")
+                        ->success()
+                        ->sendToDatabase($investor);
+                    break;
+                    
+                case self::TYPE_WITHDRAWAL:
+                    Notification::make()
+                        ->title('Withdrawal Processed')
+                        ->body("Withdrawal of {$ledger->amount} has been processed.")
+                        ->warning()
+                        ->sendToDatabase($investor);
+                    break;
+            }
+        });
+    }
 
     // Transaction types
     const TYPE_DEPOSIT = 'deposit';

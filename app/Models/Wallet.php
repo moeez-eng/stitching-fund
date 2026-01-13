@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Filament\Notifications\Notification;
 
 class Wallet extends Model
 {
@@ -71,6 +72,18 @@ class Wallet extends Model
             if ($wallet->isDirty('total_deposits')) {
                 $oldTotal = $wallet->getOriginal('total_deposits');
                 $newTotal = $wallet->total_deposits;
+                
+                if ($newTotal > $oldTotal) {
+                    // Deposit notification
+                    $investor = $wallet->investor;
+                    if ($investor) {
+                        Notification::make()
+                            ->title('Deposit Received')
+                            ->body("Your wallet has been credited with " . ($newTotal - $oldTotal) . " amount.")
+                            ->success()
+                            ->sendToDatabase($investor);
+                    }
+                }
                 
                 if ($newTotal < $oldTotal) {
                     // Prevent decreasing total_deposits

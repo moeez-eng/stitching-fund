@@ -7,6 +7,7 @@ use App\Filament\Resources\Wallet\WalletResource;
 use Filament\Resources\Pages\Page;
 use App\Models\Wallet as WalletModel;
 use App\Models\InvestmentPool;
+use App\Models\WithdrawalRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\HtmlString;

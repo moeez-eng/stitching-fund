@@ -525,8 +525,8 @@
             "
             onmouseover="this.style.background='linear-gradient(135deg, #7c3aed, #6d28d9)'; this.style.transform='translateY(-2px)'"
             onmouseout="this.style.background='linear-gradient(135deg, #8b5cf6, #7c3aed)'; this.style.transform='translateY(0)'"
-            onclick="window.location.href='{{ \App\Filament\Resources\Wallet\WalletResource::getUrl('index') }}'">
-               Transuction History 
+            onclick="window.location.href='{{ \App\Filament\Resources\Wallet\WalletResource::getUrl('transaction-history', ['walletId' => $wallet->id]) }}'">
+               Transaction History 
             </div>
         </div>
 

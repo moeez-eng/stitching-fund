@@ -61,6 +61,7 @@ class WalletResource extends Resource
             'index' => \App\Filament\Resources\Wallet\Pages\ListWallets::route('/'),
             'create' => \App\Filament\Resources\Wallet\Pages\CreateWallet::route('/create'),
             'edit' => \App\Filament\Resources\Wallet\Pages\EditWallet::route('/{record}/edit'),
+            'transaction-history' => \App\Filament\Resources\Wallet\Pages\TransactionHistory::route('/transaction-history/{walletId?}'),
         ];
     }
 

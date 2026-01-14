@@ -33,7 +33,7 @@ class AdminPanelProvider extends PanelProvider
             ->registration(Register::class)
             ->brandName('Lotrix')
             ->databaseNotifications()
-            ->databaseNotificationsPolling('30s')
+            ->databaseNotificationsPolling('15s')
             ->renderHook(
                 'panels::head.end',
                 fn (): string => '<meta name="csrf-token" content="{{ csrf_token() }}">',

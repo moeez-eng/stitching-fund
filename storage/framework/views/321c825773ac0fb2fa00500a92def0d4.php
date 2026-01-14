@@ -3,6 +3,7 @@
     use Illuminate\Support\Facades\Auth;
 ?>
 
+<div>
 <?php if (isset($component)) { $__componentOriginal166a02a7c5ef5a9331faf66fa665c256 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal166a02a7c5ef5a9331faf66fa665c256 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament-panels::components.page.index','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -225,7 +226,7 @@
                 "
                onmouseover="this.style.background='linear-gradient(135deg, #553c9a, #44337a)'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(107, 70, 193, 0.4)'"
                 onmouseout="this.style.background='linear-gradient(135deg, #6b46c1, #553c9a)'; this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(107, 70, 193, 0.3)'"
-                onclick="alert('Invest Request feature coming soon!')">
+                onclick="event.preventDefault(); openInvestmentModal();">
                     <div style="font-size: 1.2rem; font-weight: 700; color: white;">Request Investment</div>
                 </div>
                 
@@ -589,26 +590,6 @@
         </div>
     </div>
 
-    <!-- Owner Notification for Pending Requests -->
-    <?php if(auth()->user()->role === 'Agency Owner'): ?>
-        <?php
-            $pendingRequests = \App\Models\WithdrawalRequest::where('status', 'pending')->count();
-        ?>
-        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($pendingRequests > 0): ?>
-            <div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
-                <div style="
-                    background: #ef4444;
-                    color: white;
-                    padding: 0.5rem 1rem;
-                    border-radius: 0.5rem;
-                    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
-                    animation: pulse 2s infinite;
-                ">
-                    <strong>🔔 <?php echo e($pendingRequests); ?> Withdrawal Request<?php echo e($pendingRequests > 1 ? 's' : ''); ?> Pending</strong>
-                </div>
-            </div>
-        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
         <!-- CSS Animations -->
         <style>
@@ -617,9 +598,9 @@
                 50% { opacity: 0.8; }
             }
             
-            @keyframes pulse {
-                0%, 100% { opacity: 1; transform: scale(1); }
-                50% { opacity: 0.8; transform: scale(1.05); }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
             }
             
             .wallet-card {
@@ -668,10 +649,7 @@
             const formData = new FormData(document.getElementById('withdrawForm'));
             const amount = parseFloat(formData.get('requested_amount'));
             
-            if (amount > currentAvailableBalance) {
-                alert('Requested amount cannot exceed available balance');
-                return;
-            }
+          
             
             // Disable submit button to prevent double submission
             const submitBtn = document.querySelector('#withdrawForm button[type="submit"]');
@@ -691,29 +669,165 @@
                     requested_amount: amount
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Response received:', data); // Debug log
-                if (data.success) {
-                    alert('Withdrawal request submitted successfully!');
-                    closeWithdrawModal();
-                    // Remove auto-reload completely - let user close manually
-                    // setTimeout(() => {
-                    //     location.reload();
-                    // }, 2000);
-                } else {
-                    alert('Error: ' + data.message);
-                    // Re-enable button on error
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Submit Request';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to submit request');
-                // Re-enable button on error
+            .then(response => {
+                // Request submitted successfully - Filament notification will show from controller
+                closeWithdrawModal();
+                
+                // Reset the form
+                const form = document.getElementById('withdrawForm');
+                if (form) form.reset();
+                
+                // Re-enable button
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Submit Request';
+            });
+        }
+    </script>
+
+    <!-- Investment Pool Selection Modal -->
+    <div id="investmentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+        <div style="background: linear-gradient(145deg, #1e1b4b 0%, #581c87 50%, #8b5cf6 100%); padding: 2rem; border-radius: 1rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+            <h3 style="color: white; margin-bottom: 1rem;">Select Investment Pool</h3>
+            <div id="poolsContainer" style="display: grid; gap: 1rem; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; justify-content: center; padding: 2rem; color: #a78bfa;">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite; margin-right: 0.5rem;">
+                        <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                    </svg>
+                    <span>Loading investment pools...</span>
+                </div>
+            </div>
+            <button onclick="closeInvestmentModal()" style="width: 100%; padding: 0.75rem; background: #ef4444; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- Investment Amount Modal -->
+    <div id="investmentAmountModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+        <div style="background: linear-gradient(145deg, #1e1b4b 0%, #581c87 50%, #8b5cf6 100%); padding: 2rem; border-radius: 1rem; max-width: 400px; width: 90%;">
+            <h3 style="color: white; margin-bottom: 1rem;">Invest in Pool</h3>
+            <div id="selectedPoolInfo" style="color: #a78bfa; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+            
+            <form id="investmentForm" onsubmit="submitInvestmentRequest(event)">
+                <input type="hidden" id="pool_id" name="pool_id">
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="color: white; display: block; margin-bottom: 0.5rem;">Investment Amount (PKR)</label>
+                    <input type="number" id="investment_amount" name="amount" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid rgba(139, 92, 246, 0.3); background: rgba(255,255,255,0.1); color: white;" step="100" min="100" required>
+                </div>
+                
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" style="flex: 1; padding: 0.75rem; background: #22c55e; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
+                        Send Request
+                    </button>
+                    <button type="button" onclick="closeInvestmentAmountModal()" style="flex: 1; padding: 0.75rem; background: #581c87 50%; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let selectedPool = null;
+
+        function openInvestmentModal() {
+            document.getElementById('investmentModal').style.display = 'flex';
+            loadAvailablePools();
+        }
+
+        function closeInvestmentModal() {
+            document.getElementById('investmentModal').style.display = 'none';
+        }
+
+        function closeInvestmentAmountModal() {
+            document.getElementById('investmentAmountModal').style.display = 'none';
+        }
+
+        function loadAvailablePools() {
+            console.log('Loading pools...');
+            
+            fetch('/investor/available-pools')
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    const container = document.getElementById('poolsContainer');
+                    container.innerHTML = '';
+                    
+                    if (data.success && data.pools.length > 0) {
+                        data.pools.forEach(pool => {
+                            const poolCard = createPoolCard(pool);
+                            container.appendChild(poolCard);
+                        });
+                    } else {
+                        container.innerHTML = '<div style="color: #a78bfa; text-align: center; padding: 2rem;">No available pools found</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading pools:', error);
+                    document.getElementById('poolsContainer').innerHTML = '<div style="color: #ef4444; text-align: center; padding: 2rem;">Error loading pools: ' + error.message + '</div>';
+                });
+        }
+
+        function createPoolCard(pool) {
+            const card = document.createElement('div');
+            card.style.cssText = `
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(139, 92, 246, 0.3);
+                border-radius: 0.75rem;
+                padding: 1.2rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            `;
+            card.onmouseover = () => card.style.background = 'rgba(255, 255, 255, 0.1)';
+            card.onmouseout = () => card.style.background = 'rgba(255, 255, 255, 0.05)';
+            card.onclick = () => selectPool(pool);
+            
+            card.innerHTML = `
+                <div style="color: white; font-weight: 600; margin-bottom: 0.5rem;"> Lot no:${pool.lat ? pool.lat.lat_no : ''}</div>
+                <div style="color: white; font-weight: 600; margin-bottom: 0.5rem;">Design:${pool.design_name}</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem;">
+                    <div style="color: #22c55e;">Required: PKR ${pool.amount_required.toLocaleString()}</div>
+                    <div style="color: #f59e0b;">Collected: PKR ${pool.total_collected.toLocaleString()}</div>
+                    <div style="color: #a78bfa;">Progress Collected: ${pool.percentage_collected}%</div>
+                    <div style="color: #ef4444;">Remaining: PKR ${pool.remaining_amount.toLocaleString()}</div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function selectPool(pool) {
+            selectedPool = pool;
+            document.getElementById('pool_id').value = pool.id;
+            document.getElementById('selectedPoolInfo').textContent = `Lot no: ${pool.lat_no} - ${pool.design_name}`;
+            document.getElementById('investmentAmountModal').style.display = 'flex';
+            document.getElementById('investmentModal').style.display = 'none';
+        }
+
+        function submitInvestmentRequest(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            
+            fetch('/investor/request-investment', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            })
+            .then(response => {
+                closeInvestmentAmountModal();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 50);
             });
         }
     </script>
@@ -727,4 +841,5 @@
 <?php $component = $__componentOriginal166a02a7c5ef5a9331faf66fa665c256; ?>
 <?php unset($__componentOriginal166a02a7c5ef5a9331faf66fa665c256); ?>
 <?php endif; ?>
+</div>
 <?php /**PATH C:\xampp\htdocs\stitching-fund\resources\views/filament/wallet/pages/list-wallets.blade.php ENDPATH**/ ?>

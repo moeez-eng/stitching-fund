@@ -23,3 +23,20 @@ Route::post('/wallet/withdraw-request', [WalletController::class, 'withdrawReque
     ->middleware('auth')
     ->name('wallet.withdraw-request');
 
+// Investment request route for investors
+Route::post('/investor/request-investment', [WalletController::class, 'requestInvestment'])
+    ->middleware('auth')
+    ->name('investor.request-investment');
+
+// Get pool data route
+Route::get('/wallet/pool-data', [WalletController::class, 'getPoolData'])
+    ->middleware('auth')
+    ->name('wallet.pool-data');
+
+// Get available pools for investment
+Route::get('/investor/available-pools', [WalletController::class, 'getAvailablePools'])
+    ->middleware('auth')
+    ->name('investor.available-pools');
+
+    
+

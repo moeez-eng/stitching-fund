@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Facades\Log;
 
 class WithdrawalRequest extends Model
 {
@@ -92,6 +93,11 @@ class WithdrawalRequest extends Model
         
         // Create ledger entry for withdrawal
         try {
+            Log::info('Attempting to create withdrawal ledger', [
+                'request_id' => $this->id,
+                'amount' => $finalAmount
+            ]);
+            
             $ledger = \App\Models\WalletLedger::createWithdrawal(
                 $this->wallet,
                 $finalAmount,
@@ -103,6 +109,21 @@ class WithdrawalRequest extends Model
                 'ledger_id' => $ledger->id,
                 'amount' => $finalAmount
             ]);
+
+            // Send notification to investor
+            $investor = $this->wallet->investor;
+            if ($investor) {
+                Notification::make()
+                    ->title('Withdrawal Approved')
+                    ->body("Withdrawal of {$finalAmount} has been processed.")
+                    ->warning()
+                    ->sendToDatabase($investor);
+                    
+                Log::info('Withdrawal notification sent to investor', [
+                    'investor_id' => $investor->id,
+                    'amount' => $finalAmount
+                ]);
+            }
 
             $this->update([
                 'status' => self::STATUS_APPROVED,
@@ -135,11 +156,25 @@ class WithdrawalRequest extends Model
             return false;
         }
 
-        return $this->update([
+        $result = $this->update([
             'status' => self::STATUS_REJECTED,
             'owner_notes' => $notes,
             'approved_by' => $user->id,
             'approved_at' => now(),
         ]);
+        
+        // Send notification to investor about rejection
+        if ($result) {
+            $investor = $this->wallet->investor;
+            if ($investor) {
+                Notification::make()
+                    ->title('Withdrawal Request Rejected')
+                    ->body("Your withdrawal request of {$this->requested_amount} PKR has been rejected. Reason: " . ($notes ?? 'No reason provided'))
+                    ->danger()
+                    ->sendToDatabase($investor);
+            }
+        }
+        
+        return $result;
     }
 }

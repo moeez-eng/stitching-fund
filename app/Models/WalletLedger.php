@@ -67,7 +67,7 @@ class WalletLedger extends Model
                     
                 case self::TYPE_WITHDRAWAL:
                     Notification::make()
-                        ->title('Withdrawal Processed')
+                        ->title('Withdrawal Approved')
                         ->body("Withdrawal of {$ledger->amount} has been processed.")
                         ->warning()
                         ->sendToDatabase($investor);

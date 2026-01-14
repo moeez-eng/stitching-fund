@@ -1,4 +1,4 @@
-@extends('filament::layouts.app')
+{{-- @extends('filament::layouts.app')
 
 @section('content')
 <div>
@@ -187,12 +187,6 @@
             event.preventDefault();
             
             const formData = new FormData(event.target);
-            const amount = formData.get('requested_amount');
-            
-            if (amount > currentAvailableBalance) {
-                alert('Amount cannot exceed available balance');
-                return;
-            }
             
             fetch('/wallet/withdraw-request', {
                 method: 'POST',
@@ -201,21 +195,14 @@
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Withdrawal request submitted successfully!');
-                    closeWithdrawModal();
+            .then(response => {
+                // Request submitted successfully - Filament notification will show from controller
+                closeWithdrawModal();
+                setTimeout(() => {
                     window.location.reload();
-                } else {
-                    alert(data.message || 'Error submitting request');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error submitting request');
+                }, 100);
             });
         }
     </script>
 </div>
-@endsection
+@endsection --}}

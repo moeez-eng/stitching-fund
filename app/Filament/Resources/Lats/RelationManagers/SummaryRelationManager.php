@@ -19,6 +19,10 @@ class SummaryRelationManager extends RelationManager
     protected static ?string $relationshipTitle = 'Financial Summary Report';
 
     protected static string $relationship = 'summaries';
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('edit', ['record' => $this->getOwnerRecord()]);
+    }
 
     public function table(Table $table): Table
     {
@@ -74,6 +78,7 @@ class SummaryRelationManager extends RelationManager
             ['type' => 'Profit Per Piece', 'amount' => $profitPerPiece, 'is_header' => false, 'description' => 'Profit earned per unit', 'icon' => 'heroicon-o-sparkles'],
             ['type' => 'Selling Price Per Piece', 'amount' => $sellingPricePerPiece, 'is_header' => false, 'is_bold' => true, 'description' => 'Price to charge customers', 'icon' => 'heroicon-o-receipt-percent'],
         ];
+        
 
         $lat->summaries()->delete();
         foreach ($summaryData as $data) {
@@ -229,8 +234,8 @@ class SummaryRelationManager extends RelationManager
                             ->body('Your financial calculations have been updated.')
                             ->send();
                         
-                        // Refresh the entire page to show updated data
-                        $this->redirect('/lats', navigate: true);
+                        // Refresh current page to show updated data
+                        return redirect(request()->header('referer'));
                     }),
 
                 Action::make('download_report')

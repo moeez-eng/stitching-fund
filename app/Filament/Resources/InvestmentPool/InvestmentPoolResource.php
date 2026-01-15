@@ -10,11 +10,12 @@ use Filament\Schemas\Schema;
 use App\Models\InvestmentPool;
 use Filament\Resources\Resource;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Log;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Infolists\Components\TextEntry;
@@ -226,7 +227,7 @@ class InvestmentPoolResource extends Resource
         Log::info('handleRecordCreation called', ['data_keys' => array_keys($data)]);
         
         // Test notification at the very beginning
-        \Filament\Notifications\Notification::make()
+       Notification::make()
             ->title('Pool Creation Started')
             ->body('Creating investment pool...')
             ->info()

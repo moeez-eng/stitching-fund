@@ -190,44 +190,6 @@
         </div>
     </section>
 
-    <!-- Production Process Gallery -->
-    <section class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h3 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    Complete Production Workflow
-                </h3>
-                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                    From raw materials to finished products - track every step
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="text-center">
-                    <img src="https://images.unsplash.com/photo-1528459801416-a9e53bbf4e35?w=400&h=300&fit=crop" 
-                         alt="Raw Materials" 
-                         class="w-full h-48 object-cover rounded-lg mb-4">
-                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Raw Materials</h4>
-                    <p class="text-gray-600">Track fabric inventory and manage suppliers efficiently</p>
-                </div>
-                <div class="text-center">
-                    <img src="https://images.unsplash.com/photo-1580927752452-23d9ec7f4423?w=400&h=300&fit=crop" 
-                         alt="Production Process" 
-                         class="w-full h-48 object-cover rounded-lg mb-4">
-                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Production Process</h4>
-                    <p class="text-gray-600">Monitor cutting, stitching, and quality control stages</p>
-                </div>
-                <div class="text-center">
-                    <img src="https://images.unsplash.com/photo-1445205170230-053b83016050?w=400&h=300&fit=crop" 
-                         alt="Finished Products" 
-                         class="w-full h-48 object-cover rounded-lg mb-4">
-                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Finished Products</h4>
-                    <p class="text-gray-600">Manage inventory and track orders from completion to delivery</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Mobile Installation Guide -->
     <section id="mobile-guide" class="py-20 bg-purple-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

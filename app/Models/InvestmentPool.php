@@ -22,6 +22,8 @@ class InvestmentPool extends Model
         'partners',
         'status',
         'user_id',
+        'returns_distributed',
+        'returns_distributed_at',
     ];
 
     protected $appends = [
@@ -35,6 +37,8 @@ class InvestmentPool extends Model
         'partners' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'returns_distributed' => 'boolean',
+        'returns_distributed_at' => 'datetime',
     ];
 
     public const STATUS_DRAFT = 'draft';

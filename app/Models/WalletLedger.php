@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 class WalletLedger extends Model
 {
@@ -27,10 +28,25 @@ class WalletLedger extends Model
     protected static function booted()
     {
         static::created(function ($ledger) {
+            Log::info('WalletLedger created event fired', [
+                'ledger_id' => $ledger->id,
+                'type' => $ledger->type,
+                'amount' => $ledger->amount,
+                'wallet_id' => $ledger->wallet_id
+            ]);
+            
             $wallet = $ledger->wallet;
             $investor = $wallet->investor;
             
-            if (!$investor) return;
+            if (!$investor) {
+                Log::warning('No investor found for wallet', ['wallet_id' => $wallet->id]);
+                return;
+            }
+            
+            Log::info('Sending notification to investor', [
+                'investor_id' => $investor->id,
+                'ledger_type' => $ledger->type
+            ]);
             
             switch ($ledger->type) {
                 case self::TYPE_DEPOSIT:

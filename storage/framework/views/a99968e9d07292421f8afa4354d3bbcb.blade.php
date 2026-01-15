@@ -10,8 +10,8 @@
             <!--[if BLOCK]><![endif]-->                <span
                     class="fi-badge fi-size-xs fi-color fi-color-primary fi-text-color-600 dark:fi-text-color-200"
                 >
-                    1
+                    17
                 </span>
             <!--[if ENDBLOCK]><![endif]-->        </div>
     <!--[if ENDBLOCK]><![endif]--></button>
-</div><?php /**PATH C:\xampp\htdocs\stitching-fund\storage\framework\views/bfe0ef9fb507ec2f9cd1fe1ebe5dff47.blade.php ENDPATH**/ ?>
+</div>

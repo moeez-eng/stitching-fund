@@ -10,8 +10,8 @@
             <!--[if BLOCK]><![endif]-->                <span
                     class="fi-badge fi-size-xs fi-color fi-color-primary fi-text-color-600 dark:fi-text-color-200"
                 >
-                    4
+                    5
                 </span>
             <!--[if ENDBLOCK]><![endif]-->        </div>
     <!--[if ENDBLOCK]><![endif]--></button>
-</div><?php /**PATH C:\xampp\htdocs\stitching-fund\storage\framework\views/8db9eb30f0f8c78bb856349818c98edc.blade.php ENDPATH**/ ?>
+</div>

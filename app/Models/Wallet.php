@@ -19,6 +19,7 @@ class Wallet extends Model
     protected $fillable = [
         'agency_owner_id',
         'investor_id',
+        'amount',
         'total_deposits', 
         'slip_type',
         'slip_path',
@@ -27,6 +28,7 @@ class Wallet extends Model
     ];
 
     protected $casts = [
+        'amount' => 'decimal:2',
         'total_deposits' => 'decimal:2', // Lifetime deposited
         'deposited_at' => 'datetime',
     ];

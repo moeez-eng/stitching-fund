@@ -423,7 +423,7 @@
                                     height: 100%;
                                     background: linear-gradient(90deg, #8b5cf6, #a78bfa);
                                     border-radius: 2px;
-                                    width: <?php echo e(min($totalInvestedInPool / ($pool->amount_required ?? 1000000) * 100, 100)); ?>%;
+                                    width: <?php echo e(($pool->amount_required && $pool->amount_required > 0) ? min($totalInvestedInPool / $pool->amount_required * 100, 100) : 0); ?>%;
                                     transition: width 0.3s ease;
                                 "></div>
                             </div>

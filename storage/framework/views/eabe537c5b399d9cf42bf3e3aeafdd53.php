@@ -6,5 +6,12 @@
 </svg>
 
     <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->
-    <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]--></button>
-</div><?php /**PATH C:\xampp\htdocs\stitching-fund\storage\framework\views/70456155780d8070725d1d60a1dabe0e.blade.php ENDPATH**/ ?>
+    <!--[if BLOCK]><![endif]-->        <div class="fi-icon-btn-badge-ctn">
+            <!--[if BLOCK]><![endif]-->                <span
+                    class="fi-badge fi-size-xs fi-color fi-color-primary fi-text-color-600 dark:fi-text-color-200"
+                >
+                    5
+                </span>
+            <!--[if ENDBLOCK]><![endif]-->        </div>
+    <!--[if ENDBLOCK]><![endif]--></button>
+</div><?php /**PATH C:\xampp\htdocs\stitching-fund\storage\framework\views/4fd3dc1768a8ccd1450f794955a73597.blade.php ENDPATH**/ ?>

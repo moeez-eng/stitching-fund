@@ -44,7 +44,7 @@ class AdminPanelProvider extends PanelProvider
                     <style>
                         .filament-branding img {
                             border-radius: 12px !important;
-                            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+                            box-shadow: 0 6px 6px rgba(0, 0, 0, 0.1) !important;
                             max-width: 80px !important;
                             height: auto !important;
                         }

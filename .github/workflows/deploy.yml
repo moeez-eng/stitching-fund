@@ -1,0 +1,30 @@
+name: Deploy to Production
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: SSH Deploy
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+
+            cd /var/www/stitching-fund
+
+            git reset --hard HEAD
+            git pull origin main
+
+            composer install --no-dev --optimize-autoloader
+
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan view:cache
+
+            sudo systemctl restart php8.3-fpm

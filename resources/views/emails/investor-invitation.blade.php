@@ -20,6 +20,12 @@
             text-align: center;
             border-radius: 8px 8px 0 0;
         }
+        .logo {
+            max-width: 120px;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
         .content {
             background: #f9fafb;
             padding: 30px;
@@ -47,6 +53,7 @@
 <body>
     <div class="container">
         <div class="header">
+            <img src="{{ asset('images/logo-removebg.png') }}" alt="Lotrix Logo" class="logo">
             <h1>{{ config('app.name') }}</h1>
         </div>
         <div class="content">

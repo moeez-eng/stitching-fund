@@ -36,10 +36,13 @@
         
         <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-4xl md:text-5xl font-bold mb-6">
-                Professional Cloths Production Management System
+                Lotrix - Where Investments Meet Stitches
             </h2>
-            <p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
-                Streamline your manufacturing business with real-time cost tracking, profit calculations, and production management.
+            <p class="text-xl md:text-2xl mb-4 max-w-3xl mx-auto">
+                Stitch Today, Slay Payday – Lotrix: Where Wealth Gets Sewed Your Way!
+            </p>
+            <p class="text-lg md:text-xl mb-8 max-w-3xl mx-auto text-purple-100">
+                Join Lotrix and grow with every stitch. Manage investor funds, track production investments, and distribute returns efficiently.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="<?php echo e(route('filament.admin.auth.register')); ?>" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
@@ -57,10 +60,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h3 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    See Your Production at a Glance
+                    See Your Investment Dashboard at a Glance
                 </h3>
                 <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                    Intuitive dashboard designed for cloth production management
+                    Intuitive dashboard designed for stitching fund management and investor relations
                 </p>
             </div>
 
@@ -86,7 +89,7 @@
                     Everything You Need to Manage Your Business
                 </h3>
                 <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                    Powerful features designed specifically for manufacturing businesses
+                    Powerful features designed specifically for stitching fund investment management
                 </p>
             </div>
 
@@ -98,8 +101,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
-                    <h4 class="text-xl font-semibold text-gray-900 mb-3">Real-time Cost Tracking</h4>
-                    <p class="text-gray-600">Monitor materials, labor, and expenses in real-time with our intuitive tracking system.</p>
+                    <h4 class="text-xl font-semibold text-gray-900 mb-3">Investor Wallet Management</h4>
+                    <p class="text-gray-600">Track investor deposits, available balance, active investments, and total returns with real-time wallet calculations.</p>
                 </div>
 
                 <!-- Feature 2 -->
@@ -109,8 +112,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
                     </div>
-                    <h4 class="text-xl font-semibold text-gray-900 mb-3">Profit Calculations</h4>
-                    <p class="text-gray-600">Automatic profit margin and pricing calculations to help you make informed business decisions.</p>
+                    <h4 class="text-xl font-semibold text-gray-900 mb-3">Investment Pool Management</h4>
+                    <p class="text-gray-600">Create and manage investment pools for stitching projects with automatic partner allocation and fund distribution.</p>
                 </div>
 
                 <!-- Feature 3 -->
@@ -120,8 +123,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                         </svg>
                     </div>
-                    <h4 class="text-xl font-semibold text-gray-900 mb-3">Material Management</h4>
-                    <p class="text-gray-600">Track inventory, manage suppliers, and optimize material usage for maximum efficiency.</p>
+                    <h4 class="text-xl font-semibold text-gray-900 mb-3">LAT & Design Management</h4>
+                    <p class="text-gray-600">Manage stitching designs, LAT numbers, customer information, and track production pieces efficiently.</p>
                 </div>
 
                 <!-- Feature 4 -->
@@ -131,8 +134,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                         </svg>
                     </div>
-                    <h4 class="text-xl font-semibold text-gray-900 mb-3">Production Tracking</h4>
-                    <p class="text-gray-600">Monitor production progress, track pieces, and manage workflow efficiently.</p>
+                    <h4 class="text-xl font-semibold text-gray-900 mb-3">Multi-Role User System</h4>
+                    <p class="text-gray-600">Manage Agency Owners, and Investors with role-based access control and permissions.</p>
                 </div>
 
                 <!-- Feature 5 -->
@@ -142,8 +145,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                         </svg>
                     </div>
-                    <h4 class="text-xl font-semibold text-gray-900 mb-3">PDF Reports</h4>
-                    <p class="text-gray-600">Generate professional PDF reports for costs, profits, and production analytics.</p>
+                    <h4 class="text-xl font-semibold text-gray-900 mb-3">Return Distribution System</h4>
+                    <p class="text-gray-600">Automated profit and return distribution to investors with complete transaction history and reporting.</p>
                 </div>
 
                 <!-- Feature 6 -->
@@ -153,8 +156,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                         </svg>
                     </div>
-                    <h4 class="text-xl font-semibold text-gray-900 mb-3">Multi-user Support</h4>
-                    <p class="text-gray-600">Collaborate with your team using role-based access and permissions.</p>
+                    <h4 class="text-xl font-semibold text-gray-900 mb-3">Investor Invitation System</h4>
+                    <p class="text-gray-600">Send invitations to new investors, manage registration approvals, and onboard team members seamlessly.</p>
                 </div>
             </div>
         </div>
@@ -168,7 +171,7 @@
                     See Lotrix in Action
                 </h3>
                 <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                    Watch how our system transforms cloth production management
+                    Watch how our system transforms stitching fund investment management
                 </p>
             </div>
 
@@ -278,11 +281,11 @@
     <!-- CTA Section -->
     <section class="bg-purple-600 py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h3 class="text-3xl font-bold text-white mb-4">
-                Ready to streamline your manufacturing business?
+            <h3 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Ready to streamline your stitching fund business?
             </h3>
             <p class="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
-                Join thousands of businesses using Lotrix to manage their production efficiently.
+                Join thousands of businesses using Lotrix to manage their stitching investments efficiently.
             </p>
             <a href="<?php echo e(route('filament.admin.auth.register')); ?>" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
                 Get Started Today
@@ -293,7 +296,7 @@
     <!-- Footer -->
     <footer class="bg-gray-900 text-gray-300 py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p>&copy; 2024 Lotrix. Professional Cloths Production Management System.</p>
+            <p>&copy; 2024 Lotrix. Professional Stitching Fund Investment Management System.</p>
         </div>
     </footer>
 

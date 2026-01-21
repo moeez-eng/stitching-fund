@@ -32,11 +32,22 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->registration(Register::class)
             ->brandName('Lotrix')
+            ->brandLogo(asset('images/logo-removebg.png'))
+            ->brandLogoHeight('3.5rem')
             ->databaseNotifications()
             ->databaseNotificationsPolling('15s')
             ->renderHook(
                 'panels::head.end',
-                fn (): string => '<meta name="csrf-token" content="{{ csrf_token() }}">',
+                fn (): string => '
+                    <meta name="csrf-token" content="{{ csrf_token() }}">
+                    <link rel="icon" type="image/png" href="' . asset('images/logo-removebg.png') . '">
+                    <style>
+                        .filament-branding img {
+                            border-radius: 12px !important;
+                            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+                        }
+                    </style>
+                ',
             )
             ->pages([
                 \Filament\Pages\Dashboard::class,

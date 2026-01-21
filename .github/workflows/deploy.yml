@@ -9,13 +9,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: SSH Deploy
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-
             cd /var/www/stitching-fund
 
             git reset --hard HEAD

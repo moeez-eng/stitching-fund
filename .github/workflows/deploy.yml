@@ -18,6 +18,8 @@ jobs:
           script: |
             cd /var/www/stitching-fund
 
+            echo "https://${{ secrets.DEPLOY_TOKEN }}@github.com/moeez-eng/stitching-fund.git" > /tmp/repo_url
+            git remote set-url origin $(cat /tmp/repo_url)
             git reset --hard HEAD
             git pull origin main
 

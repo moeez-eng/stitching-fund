@@ -40,7 +40,7 @@ class AdminPanelProvider extends PanelProvider
                 'panels::head.end',
                 fn (): string => '
                     <meta name="csrf-token" content="{{ csrf_token() }}">
-                    <link rel="icon" type="image/png" href="' . asset('images/logo-removebg.png') . '">
+                    <link rel="icon" type="image/png" href="' . asset('images/logo.png') . '">
                     <style>
                         .filament-branding img {
                             border-radius: 12px !important;

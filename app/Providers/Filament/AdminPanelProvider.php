@@ -31,8 +31,8 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->registration(Register::class)
-            ->brandName('Lotrix')
-            ->brandLogo(asset('images/logo-removebg.png'))
+            ->brandName('ZARYQ')
+            ->brandLogo(asset('images/logo.png'))
             ->brandLogoHeight('3.5rem')
             ->databaseNotifications()
             ->databaseNotificationsPolling('15s')
@@ -41,6 +41,9 @@ class AdminPanelProvider extends PanelProvider
                 fn (): string => '
                     <meta name="csrf-token" content="{{ csrf_token() }}">
                     <link rel="icon" type="image/png" href="' . asset('images/logo.png') . '">
+                    <link rel="icon" type="image/png" sizes="32x32" href="' . asset('images/logo.png') . '">
+                    <link rel="icon" type="image/png" sizes="16x16" href="' . asset('images/logo.png') . '">
+                    <link rel="apple-touch-icon" sizes="180x180" href="' . asset('images/logo.png') . '">
                     <style>
                         .filament-branding img {
                             border-radius: 12px !important;

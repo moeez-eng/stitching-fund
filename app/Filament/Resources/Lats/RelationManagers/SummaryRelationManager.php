@@ -67,7 +67,7 @@ class SummaryRelationManager extends RelationManager
             // PAYMENT STATUS SECTION
             ['type' => 'PAYMENT STATUS', 'amount' => null, 'is_header' => true, 'icon' => null],
             ['type' => 'Market Payments Received', 'amount' => $marketPaymentsReceived, 'is_header' => false, 'description' => 'Amount received from customer', 'icon' => 'heroicon-o-banknotes'],
-            ['type' => 'Payment Status', 'amount' => $paymentStatus, 'is_payment_status' => true, 'is_header' => false, 'description' => 'Current payment status', 'icon' => 'heroicon-o-clipboard-document-check'],
+            ['type' => 'Payment Status', 'amount' => null, 'is_payment_status' => true, 'is_header' => false, 'description' => 'Current payment status', 'icon' => 'heroicon-o-clipboard-document-check'],
             ['type' => 'Payment Percentage', 'amount' => $paymentPercentage, 'is_percentage' => true, 'is_header' => false, 'description' => 'Percentage of total price paid', 'icon' => 'heroicon-o-chart-pie'],
             ['type' => 'Balance Remaining', 'amount' => $balanceRemaining, 'is_header' => false, 'is_bold' => true, 'description' => 'Amount still to be received', 'icon' => 'heroicon-o-exclamation-triangle'],
 
@@ -131,14 +131,16 @@ class SummaryRelationManager extends RelationManager
                                           (strpos($record->type ?? '', 'Payment Status') !== false);
                         
                         if ($isPaymentStatus) {
-                            $statusColor = match($state) {
+                            // Get the actual payment status from the lat record
+                            $actualPaymentStatus = $lat->payment_status ?? 'pending';
+                            $statusColor = match($actualPaymentStatus) {
                                 'pending' => 'bg-red-100 text-red-800 border-red-200',
                                 'partial' => 'bg-yellow-100 text-yellow-800 border-yellow-200', 
                                 'complete' => 'bg-green-100 text-green-800 border-green-200',
                                 'lose' => 'bg-gray-100 text-gray-800 border-gray-200',
                                 default => 'bg-gray-100 text-gray-800 border-gray-200'
                             };
-                            $statusText = ucfirst($state);
+                            $statusText = ucfirst($actualPaymentStatus);
                             return new HtmlString("
                                 <span class='inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold {$statusColor}'>
                                     {$statusText}

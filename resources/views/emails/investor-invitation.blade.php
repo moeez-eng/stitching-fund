@@ -53,7 +53,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="{{ asset('images/logo-removebg.png') }}" alt="Lotrix Logo" class="logo">
+            <img src="/images/logo.png" alt="Lotrix Logo" class="logo">
             <h1>Lotrix</h1>
         </div>
         <div class="content">

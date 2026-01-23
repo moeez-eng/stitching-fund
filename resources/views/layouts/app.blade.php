@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name', 'Lotrix') }}</title>
+    <title>ZARYQ - From Fabric to Finish</title>
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#9333ea">

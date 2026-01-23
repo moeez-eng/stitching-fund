@@ -1,7 +1,7 @@
 {
-    "name": "ZARYQ - Cloths Production Management",
+    "name": "ZARYQ - From Fabric to Finish",
     "short_name": "ZARYQ",
-    "description": "Professional cloths production management system",
+    "description": "A smart and professional clothing production management system designed to simplify, track, and control the entire production process from fabric to finish.",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",

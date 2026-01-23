@@ -17,9 +17,9 @@
                         <a href="{{ route('login') }}" class="text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">
                             Login
                         </a>
-                        <a href="#mobile-guide" class="bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700">
+                        <button onclick="installApp()" class="bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700">
                             Download App
-                        </a>
+                        </button>
                     @endauth
                 </div>
             </div>
@@ -30,25 +30,26 @@
     <section class="relative bg-gradient-to-r from-purple-600 to-purple-800 text-white py-20 overflow-hidden">
         <!-- Video Background -->
         <div class="absolute inset-0 z-0">
-            <video autoplay muted loop playsinline class="w-full h-full object-cover opacity-30">
+            {{-- <video autoplay muted loop playsinline class="w-full h-full object-cover opacity-30">
                 <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
                 Your browser does not support the video tag.
-            </video>
+            </video> --}}
+            <img src="{{ asset('images/bg-hero-img.png') }}" alt="Background" class="w-full h-full object-cover opacity-30">
         </div>
         
         <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-4xl md:text-5xl font-bold mb-6">
-                Lotrix - Where Investments Meet Stitches
+                ZARYQ — From Fabric to Finish
             </h2>
             <p class="text-xl md:text-2xl mb-4 max-w-3xl mx-auto">
-                Stitch Today, Slay Payday – Lotrix: Where Wealth Gets Sewed Your Way!
+               A smart clothing production management system to plan, track, and control your entire workflow — from raw fabric to final delivery.
             </p>
             <p class="text-lg md:text-xl mb-8 max-w-3xl mx-auto text-purple-100">
-                Join Lotrix and grow with every stitch. Manage investor funds, track production investments, and distribute returns efficiently.
+              Purchasing, cutting, stitching, finishing, orders, timelines, and reports — all managed in one powerful platform.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="{{ route('filament.admin.auth.register') }}" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
-                    Get Started
+                    Start Managing Production
                 </a>
                 <a href="{{ route('login') }}" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition">
                     Login to Dashboard

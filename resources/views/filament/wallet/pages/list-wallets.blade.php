@@ -6,7 +6,7 @@
 <div>
 <x-filament-panels::page>
     @php
-        $wallets = $this->getWalletData();
+        $wallets = $this->getWalletData() ?? [];
         $user = Auth::user();
         
         // Get all pools with their status - sort by latest first
@@ -22,6 +22,16 @@
 
     <div id="walletContainer" style="max-width: 1200px; margin: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; padding: 1rem;">
 
+    @if(empty($wallets))
+        <div style="text-align: center; padding: 3rem; grid-column: 1 / -1;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: #6b7280; margin-bottom: 1rem;">
+                No Wallet Found
+            </div>
+            <div style="color: #9ca3af;">
+                You don't have a wallet yet. Please contact the agency owner to create one for you.
+            </div>
+        </div>
+    @else
     @foreach($wallets as $wallet)
         @php
             $lifetimeDeposited = $wallet->lifetime_deposited;
@@ -534,6 +544,7 @@
         </div>
         <!-- END CARD -->
     @endforeach
+    @endif
 
     </div>
 

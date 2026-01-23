@@ -80,7 +80,17 @@
                         console.log('User dismissed the install prompt');
                     }
                     deferredPrompt = null;
+                    document.getElementById('install-button').style.display = 'none';
                 });
+            } else {
+                // If PWA install prompt is not available, scroll to manual installation guide
+                const mobileGuide = document.getElementById('mobile-guide');
+                if (mobileGuide) {
+                    mobileGuide.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    // Fallback: show alert with instructions
+                    alert('To install the app:\n\nFor Android: Tap menu (3 dots) > "Add to Home screen"\nFor iPhone: Tap Share icon > "Add to Home Screen"');
+                }
             }
         }
     </script>

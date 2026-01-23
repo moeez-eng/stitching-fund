@@ -75,7 +75,7 @@
                     <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                     <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span class="text-gray-400 text-sm ml-4">Lotrix Dashboard</span>
+                    <span class="text-gray-400 text-sm ml-4">ZARYQ Dashboard</span>
                 </div>
                 <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=600&fit=crop" 
                      alt="Dashboard Preview" 
@@ -89,10 +89,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h3 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    Everything You Need to Manage Your Business
+                    Everything You Need From Fabric to Finish
                 </h3>
                 <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                    Powerful features designed specifically for stitching fund investment management
+                    Powerful features designed specifically for clothing production management
                 </p>
             </div>
 
@@ -127,7 +127,7 @@
                         </svg>
                     </div>
                     <h4 class="text-xl font-semibold text-gray-900 mb-3">LAT & Design Management</h4>
-                    <p class="text-gray-600">Manage stitching designs, LAT numbers, customer information, and track production pieces efficiently.</p>
+                    <p class="text-gray-600">Manage stitching designs, LOT numbers, customer information, and track production pieces efficiently.</p>
                 </div>
 
                 <!-- Feature 4 -->
@@ -171,10 +171,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h3 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    See Lotrix in Action
+                    See ZARYQ Transform Production
                 </h3>
                 <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                    Watch how our system transforms stitching fund investment management
+                    Watch how our system streamlines clothing production from fabric to finish
                 </p>
             </div>
 
@@ -201,7 +201,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h3 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    Install Lotrix on Your Mobile
+                    Install ZARYQ app on Your Mobile
                 </h3>
                 <p class="text-xl text-gray-600 max-w-2xl mx-auto">
                     Get instant access with one tap - no app store needed!
@@ -234,7 +234,7 @@
                         </li>
                         <li class="flex items-start">
                             <span class="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5">4</span>
-                            <span>Tap "Add" to install Lotrix app</span>
+                            <span>Tap "Add" to install ZARYQ app</span>
                         </li>
                     </ol>
                 </div>
@@ -264,7 +264,7 @@
                         </li>
                         <li class="flex items-start">
                             <span class="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 mt-0.5">4</span>
-                            <span>Tap "Add" to install Lotrix app</span>
+                            <span>Tap "Add" to install ZARYQ app</span>
                         </li>
                     </ol>
                 </div>
@@ -275,7 +275,7 @@
                     <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>
-                    <span class="font-semibold">Lotrix will appear on your home screen like any other app!</span>
+                    <span class="font-semibold">ZARYQ  will appear on your home screen like any other app!</span>
                 </div>
             </div>
         </div>
@@ -284,11 +284,11 @@
     <!-- CTA Section -->
     <section class="bg-purple-600 py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h3 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Ready to streamline your stitching fund business?
+            <h3 class="text-1xl md:text-2xl font-bold text-gray-900 mb-4">
+                Ready to transform your clothing production from fabric to finish?
             </h3>
             <p class="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
-                Join thousands of businesses using Lotrix to manage their stitching investments efficiently.
+                Join thousands of businesses using ZARYQ to manage their entire workflow — from raw fabric to final delivery.
             </p>
             <a href="{{ route('filament.admin.auth.register') }}" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
                 Get Started Today
@@ -299,7 +299,7 @@
     <!-- Footer -->
     <footer class="bg-gray-900 text-gray-300 py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p>&copy; 2024 Lotrix. Professional Stitching Fund Investment Management System.</p>
+            <p>&copy; 2024 ZARYQ - From Fabric to Finish.</p>
         </div>
     </footer>
 

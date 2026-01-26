@@ -74,7 +74,7 @@ class AgencyOwnerStatsWidget extends StatsOverviewWidget
         
         $totalInvestments = DB::table('wallets')
             ->where('agency_owner_id', $user->id)
-            ->sum('amount') ?? 0;
+            ->sum('total_deposits') ?? 0;
         
         $pendingWithdrawals = DB::table('withdrawal_requests')
             ->join('wallets', 'wallets.id', 'withdrawal_requests.wallet_id')
@@ -133,7 +133,7 @@ class InvestorStatsWidget extends StatsOverviewWidget
         
         $walletAmount = DB::table('wallets')
             ->where('investor_id', $user->id)
-            ->value('amount') ?? 0;
+            ->value('total_deposits') ?? 0;
         
         $totalInvested = DB::table('lats')
             ->where('user_id', $user->id)

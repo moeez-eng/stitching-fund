@@ -17,13 +17,6 @@ class InvestorInvitationMail extends Mailable
         public UserInvitation $invitation
     ) {}
 
-    public function envelope(): Envelope
-    {
-        return new Envelope(
-            subject: 'Invitation to Join as Investor - ' . $this->invitation->company_name,
-        );
-    }
-
     public function content(): Content
     {
         return new Content(
@@ -31,7 +24,15 @@ class InvestorInvitationMail extends Mailable
             with: [
                 'invitation' => $this->invitation,
                 'registerUrl' => route('filament.admin.auth.register', ['invitation' => $this->invitation->unique_code]),
+                'logoPath' => public_path('images/logo.png'),
             ]
+        );
+    }
+
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: 'Invitation to Join as Investor - ' . $this->invitation->company_name,
         );
     }
 }

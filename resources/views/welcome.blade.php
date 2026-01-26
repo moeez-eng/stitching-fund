@@ -197,7 +197,7 @@
     </section>
 
     <!-- Mobile Installation Guide -->
-    <section id="mobile-guide" class="py-20 bg-purple-50">
+    <section id="mobile-guide" class="py-15 bg-purple-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h3 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -282,7 +282,7 @@
     </section>
 
     <!-- CTA Section -->
-    <section class="bg-purple-600 py-16">
+    <section class="bg-purple-600 py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h3 class="text-1xl md:text-2xl font-bold text-gray-900 mb-4">
                 Ready to transform your clothing production from fabric to finish?
@@ -297,9 +297,9 @@
     </section>
 
     <!-- Footer -->
-    <footer class="bg-gray-900 text-gray-300 py-8">
+    <footer class="bg-gray-900 text-gray-300 py-2">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p>&copy; 2024 ZARYQ - From Fabric to Finish.</p>
+            <p>&copy; 2026 ZARYQ - From Fabric to Finish.</p>
         </div>
     </footer>
 

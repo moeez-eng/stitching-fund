@@ -67,8 +67,7 @@ class SummaryRelationManager extends RelationManager
             // PAYMENT STATUS SECTION
             ['type' => 'PAYMENT STATUS', 'amount' => null, 'is_header' => true, 'icon' => null],
             ['type' => 'Market Payments Received', 'amount' => $marketPaymentsReceived, 'is_header' => false, 'description' => 'Amount received from customer', 'icon' => 'heroicon-o-banknotes'],
-            ['type' => 'Payment Status', 'amount' => null, 'is_payment_status' => true, 'is_header' => false, 'description' => 'Current payment status', 'icon' => 'heroicon-o-clipboard-document-check'],
-            ['type' => 'Payment Percentage', 'amount' => $paymentPercentage, 'is_percentage' => true, 'is_header' => false, 'description' => 'Percentage of total price paid', 'icon' => 'heroicon-o-chart-pie'],
+            ['type' => 'Payment Status', 'amount' => null, 'is_payment_status' => true, 'is_header' => false, 'description' => 'Current payment status', 'icon' => 'heroicon-o-clipboard-document-check'],            ['type' => 'Payment Percentage', 'amount' => $paymentPercentage, 'is_percentage' => true, 'is_header' => false, 'description' => 'Percentage of total price paid', 'icon' => 'heroicon-o-chart-pie'],
             ['type' => 'Balance Remaining', 'amount' => $balanceRemaining, 'is_header' => false, 'is_bold' => true, 'description' => 'Amount still to be received', 'icon' => 'heroicon-o-exclamation-triangle'],
 
             // PER UNIT BREAKDOWN

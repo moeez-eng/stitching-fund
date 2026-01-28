@@ -22,6 +22,8 @@ return new class extends Migration
             $table->decimal('remaining_amount', 15, 2)->default(0);
             $table->json('partners')->nullable();
             $table->foreignId('user_id')->nullable();
+            $table->string('status')->default('open');
+            $table->decimal('collected_amount', 15, 2)->default(0);
             $table->timestamps();
         });
     }

@@ -14,8 +14,9 @@ return new class extends Migration
        Schema::create('contacts', function (Blueprint $table) {
             $table->id();
             $table->string('name')->nullable();
-            $table->string('phone')->nullable();
+            $table->string('phone', 15)->nullable();
             $table->enum('ctype', ['customer', 'investor', 'employee']);
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

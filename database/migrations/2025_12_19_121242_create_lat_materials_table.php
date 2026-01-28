@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('lat_materials', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('lat_id')->constrained()->onDelete('cascade');
+            $table->foreignId('lat_id')->constrained('lats')->onDelete('cascade');
             $table->date('dated');
             $table->string('material');
             $table->string('colour');

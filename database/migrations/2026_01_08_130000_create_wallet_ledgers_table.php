@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('wallet_ledgers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('wallet_id')->constrained('wallets')->onDelete('cascade');
-            $table->enum('type', ['deposit', 'invest', 'return', 'profit', 'withdrawal']);
+            $table->enum('type', ['deposit', 'invest', 'return', 'profit', 'withdrawal', 'pool_adjustment']);
             $table->decimal('amount', 15, 2);
             $table->text('description')->nullable();
             $table->string('reference_type')->nullable(); // allocation, pool, return, etc

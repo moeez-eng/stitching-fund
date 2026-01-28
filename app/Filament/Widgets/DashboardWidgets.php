@@ -15,7 +15,7 @@ use Filament\Widgets\TableWidget as BaseTableWidget;
 
 // Super Admin Stats Widget
 class SuperAdminStatsWidget extends StatsOverviewWidget
-{
+{ 
     protected ?string $pollingInterval = '30s';
     
     public static function canView(): bool
@@ -368,7 +368,7 @@ class InvestmentPerformanceWidget extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
                 ->color('success'),
 
-            Stat::make('Monthly Growth', $monthlyGrowth)  // ← ADD THIS LINE
+            Stat::make('Monthly Growth', $monthlyGrowth)
                 ->description('This month')
                 ->descriptionIcon('heroicon-m-chart-bar')
                 ->color('primary'),

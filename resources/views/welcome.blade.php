@@ -181,7 +181,7 @@
 
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden max-w-4xl mx-auto">
                 <div class="relative">
-                    <video controls class="w-full h-auto" poster="{{ asset('images/thumnail.png')}}">
+                    <video controls class="w-full h-auto max-h-[478px] object-cover" poster="{{ asset('images/thumnail.png')}}">
                         <source src="{{ asset ('videos/intro.mp4') }}" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>

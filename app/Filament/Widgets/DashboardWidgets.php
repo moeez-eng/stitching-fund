@@ -363,12 +363,12 @@ class InvestmentPerformanceWidget extends StatsOverviewWidget
             ->count();
         
         return [
-            Stat::make('ROI', $roi)
+          Stat::make('ROI', $roi)
                 ->description('Return on investment')
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
                 ->color('success'),
-                
-            Stat::make('Monthly Growth', $monthlyGrowth)
+
+            Stat::make('Monthly Growth', $monthlyGrowth)  // ← ADD THIS LINE
                 ->description('This month')
                 ->descriptionIcon('heroicon-m-chart-bar')
                 ->color('primary'),

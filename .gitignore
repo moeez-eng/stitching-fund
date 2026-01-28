@@ -16,6 +16,7 @@
 /public/build
 /public/hot
 /public/storage
+/public/videos/*
 /storage/*.key
 /storage/pail
 /vendor
@@ -24,3 +25,6 @@ Homestead.yaml
 Thumbs.db
 
 /storage/framework/views/*
+storage/framework/views/f83eb011c9cf7a2fd6fa916733bc46ac.php
+storage/framework/views/e8d760dd6323910ba6416bacc6417a69.php
+/storage/framework/views

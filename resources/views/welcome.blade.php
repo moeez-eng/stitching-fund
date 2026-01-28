@@ -171,33 +171,27 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h3 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    See ZARYQ Transform Production
+                    See How ZARYQ Works
+
                 </h3>
                 <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                    Watch how our system streamlines clothing production from fabric to finish
-                </p>
+                    Watch how our system helps manage your workload 
+               </p>
             </div>
 
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden max-w-4xl mx-auto">
                 <div class="relative">
-                    <video controls class="w-full" poster="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&h=600&fit=crop">
-                        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+                    <video controls class="w-full" poster="{{ asset('images/thumnail.png')}}">
+                        <source src="{{ asset ('videos/intro.mp4') }}" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
-                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div class="bg-white bg-opacity-90 rounded-full p-6">
-                            <svg class="w-12 h-12 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"></path>
-                            </svg>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Mobile Installation Guide -->
-    <section id="mobile-guide" class="py-15 bg-purple-50">
+    <section id="mobile-guide" class="py-8 bg-purple-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h3 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">

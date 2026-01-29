@@ -15,7 +15,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Notifications\Notification;
 use Filament\Tables\Filters\SelectFilter;
 
-class UserinvitationTable
+class UserInvitationTable
 {
     public static function configure(Table $table): Table
     {

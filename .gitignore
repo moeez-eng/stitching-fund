@@ -25,18 +25,4 @@ Homestead.yaml
 Thumbs.db
 
 /storage/framework/views/
-  }
-]
-</parameter>
-</invoke>
-```antml:function_calls>
-
-2. Now, let's remove the view cache files from Git's tracking:
-
-```antml:function_calls
-<invoke name="run_command">
-<parameter name="CommandLine">git rm -r --cached storage/framework/views/</parameter>
-<parameter name="Cwd">c:\xampp\htdocs\stitching-fund</parameter>
-<parameter name="Blocking">true</parameter>
-<parameter name="SafeToAutoRun">false</parameter>
-</invoke>
+  

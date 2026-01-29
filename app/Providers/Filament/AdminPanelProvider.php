@@ -9,10 +9,14 @@ use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use App\Filament\Pages\Auth\Register;
 use App\Http\Middleware\CheckUserStatus;
-use App\Filament\Widgets\SuperAdminStatsWidget;
-use App\Filament\Widgets\AgencyOwnerStatsWidget;
+use App\Filament\Widgets\SystemHealthWidget;
 use App\Filament\Widgets\InvestorStatsWidget;
+use App\Filament\Widgets\SecurityAlertsWidget;
+use App\Filament\Widgets\SuperAdminStatsWidget;
 use Illuminate\Session\Middleware\StartSession;
+use App\Filament\Widgets\AgencyOwnerStatsWidget;
+use App\Filament\Widgets\InvestmentPerformanceWidget;
+use App\Filament\Widgets\RecentInvestmentsWidget;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
@@ -67,7 +71,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-            
+               SuperAdminStatsWidget::class,
+                SystemHealthWidget::class,
+               SecurityAlertsWidget::class,
+               InvestorStatsWidget::class,
+               AgencyOwnerStatsWidget::class,
+               InvestmentPerformanceWidget::class,
+               RecentInvestmentsWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

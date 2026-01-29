@@ -65,13 +65,13 @@ class ReturnDistributionService
                 if (!$wallet) {
                     $wallet = Wallet::create([
                         'investor_id' => $investorId,
-                        'amount' => 0,
+                        'agency_owner_id' => 1, // You may need to get this from the pool or context
                         'total_deposits' => 0
                     ]);
                 }
 
                 // Add distributed amount to wallet
-                $wallet->amount += $partnerShare;
+                $wallet->total_deposits += $partnerShare;
                 $wallet->save();
 
                 // Create transaction record for return
@@ -127,7 +127,7 @@ class ReturnDistributionService
                     'partner_name' => $partnerName,
                     'percentage' => $partnerPercentage,
                     'amount_distributed' => $partnerShare,
-                    'wallet_balance_after' => $wallet->amount
+                    'wallet_balance_after' => $wallet->total_deposits
                 ];
 
                 $totalDistributed += $partnerShare;

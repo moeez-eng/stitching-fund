@@ -28,19 +28,19 @@ class InvestmentPoolWidget extends ChartWidget
         // Get total pool amount for all investments
         $totalPool = DB::table('lats')
             ->where('user_id', $user->id)
-            ->sum('invested_amount') ?? 0;
+            ->sum('initial_investment') ?? 0;
         
         // Get active pool amount
         $activePool = DB::table('lats')
             ->where('user_id', $user->id)
             ->where('status', 'active')
-            ->sum('invested_amount') ?? 0;
+            ->sum('initial_investment') ?? 0;
         
         // Get open pool amount
         $openPool = DB::table('lats')
             ->where('user_id', $user->id)
             ->where('status', 'open')
-            ->sum('invested_amount') ?? 0;
+            ->sum('initial_investment') ?? 0;
         
         // Prepare data for donut chart
         $data = [

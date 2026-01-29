@@ -12,7 +12,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Schemas\Schema;
 
-class UserinvitationForm 
+class UserInvitationForm 
 {
     public static function configure(Schema $schema): Schema
     {

@@ -19,18 +19,27 @@ class SecurityAlertsWidget extends StatsOverviewWidget
 
     protected function getStats(): array
     {
-        // Active sessions in last 30 minutes
-        $activeSessions = DB::table('sessions')
-            ->where('last_activity', '>=', now()->subMinutes(30)->timestamp)
-            ->count();
+        // Active sessions in last 30 minutes with error handling
+        $activeSessions = 0;
+        try {
+            if (DB::getSchemaBuilder()->hasTable('sessions')) {
+                $activeSessions = DB::table('sessions')
+                    ->where('last_activity', '>=', now()->subMinutes(30)->timestamp)
+                    ->count();
+            }
+        } catch (\Exception $e) {
+            // Keep default value
+        }
 
         // Pending registrations (users waiting approval)
-        $pendingRegistrations = DB::table('users')
-            ->where('status', 'pending')    
-            ->count();
-
-      
-
+        $pendingRegistrations = 0;
+        try {
+            $pendingRegistrations = DB::table('users')
+                ->where('status', 'pending')    
+                ->count();
+        } catch (\Exception $e) {
+            // Keep default value
+        }
 
         return [
             Stat::make('Active Sessions', $activeSessions)

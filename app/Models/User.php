@@ -31,6 +31,11 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'remember_token',
     ];
+    protected $casts = [
+    'is_demo' => 'boolean',
+    'demo_expires_at' => 'datetime',
+    ];
+
 
     // No boot method needed - notifications handled in CreateUsers page
 

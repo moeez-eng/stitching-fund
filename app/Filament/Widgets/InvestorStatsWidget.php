@@ -68,7 +68,7 @@ class InvestorStatsWidget extends StatsOverviewWidget
             Stat::make('Total Deposits', number_format($totalDeposits, 0))
                 ->description('Total amount deposited')
                 ->descriptionIcon('heroicon-m-arrow-down-circle')
-                ->color('info'),
+                ->color('info'),    
         ];
     }
     

@@ -23,6 +23,9 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();
+            $table->boolean('is_demo')->default(false);
+            $table->timestamp('demo_expires_at')->nullable();
+
             $table->rememberToken();
             $table->timestamps();
         });

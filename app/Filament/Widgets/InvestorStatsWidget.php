@@ -24,32 +24,39 @@ class InvestorStatsWidget extends StatsOverviewWidget
     {
         $user = Auth::user();
         
-        $walletAmount = DB::table('wallets')
+        // Get wallet data with proper error handling
+        $walletData = DB::table('wallets')
             ->where('investor_id', $user->id)
-            ->value('total_deposits') ?? 0;
+            ->first();
         
+        $walletAmount = $walletData->available_balance ?? 0;
+        $totalDeposits = $walletData->total_deposits ?? 0;
+        
+        // Calculate total invested from LATs
         $totalInvested = DB::table('lats')
             ->where('user_id', $user->id)
-            ->sum('total_price') ?? 0;
+            ->where('payment_status', 'complete')
+            ->sum('invested_amount') ?? 0;
         
+        // Calculate pending payments
         $pendingPayments = DB::table('lats')
             ->where('user_id', $user->id)
             ->where('payment_status', 'pending')
-            ->sum('total_price') ?? 0;
+            ->sum('invested_amount') ?? 0;
         
+        // Count completed investments
         $completedPayments = DB::table('lats')
             ->where('user_id', $user->id)
             ->where('payment_status', 'complete')
             ->count();
         
         return [
-            Stat::make('Wallet Balance', number_format($walletAmount, 0))
-                ->description('Current balance')
+            Stat::make('Available Balance', number_format($walletAmount, 0))
+                ->description('Current available balance')
                 ->descriptionIcon('heroicon-m-wallet')
                 ->color('primary'),
                 
             Stat::make('Total Invested', number_format($totalInvested, 0))
-                ->description('Lifetime investments')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success'),
                 
@@ -58,9 +65,9 @@ class InvestorStatsWidget extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-m-clock')
                 ->color($pendingPayments > 0 ? 'warning' : 'success'),
                 
-            Stat::make('Completed Payments', $completedPayments)
-                ->description('Paid investments')
-                ->descriptionIcon('heroicon-m-check-circle')
+            Stat::make('Total Deposits', number_format($totalDeposits, 0))
+                ->description('Total amount deposited')
+                ->descriptionIcon('heroicon-m-arrow-down-circle')
                 ->color('info'),
         ];
     }

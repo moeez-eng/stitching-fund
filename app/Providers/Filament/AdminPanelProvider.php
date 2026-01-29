@@ -10,13 +10,13 @@ use Filament\Support\Colors\Color;
 use App\Filament\Pages\Auth\Register;
 use App\Http\Middleware\CheckUserStatus;
 use App\Filament\Widgets\SystemHealthWidget;
-use App\Filament\Widgets\InvestorStatsWidget;
+use App\Filament\Widgets\InvestmentPoolWidget;
 use App\Filament\Widgets\SecurityAlertsWidget;
 use App\Filament\Widgets\SuperAdminStatsWidget;
-use Illuminate\Session\Middleware\StartSession;
+use App\Filament\Widgets\InvestorStatsWidget;
 use App\Filament\Widgets\AgencyOwnerStatsWidget;
 use App\Filament\Widgets\InvestmentPerformanceWidget;
-use App\Filament\Widgets\RecentInvestmentsWidget;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
@@ -77,7 +77,7 @@ class AdminPanelProvider extends PanelProvider
                InvestorStatsWidget::class,
                AgencyOwnerStatsWidget::class,
                InvestmentPerformanceWidget::class,
-               RecentInvestmentsWidget::class,
+               InvestmentPoolWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

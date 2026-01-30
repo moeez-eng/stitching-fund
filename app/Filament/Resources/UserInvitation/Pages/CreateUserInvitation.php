@@ -14,6 +14,30 @@ class CreateUserInvitation extends CreateRecord
 {
     protected static string $resource = UserInvitationResource::class;
 
+    public function mount(): void
+    {
+        // Check demo user invitation limit before mounting the form
+        $user = Auth::user();
+        if ($user?->is_demo) {
+            $invitationCount = \App\Models\UserInvitation::where('invited_by', $user->id)->count();
+            
+            if ($invitationCount >= 2) {
+                \Filament\Notifications\Notification::make()
+                    ->title('Invitation Limit Reached')
+                    ->body('Demo users can only send 2 invitations. You have reached your limit.')
+                    ->warning()
+                    ->persistent()
+                    ->send();
+                
+                // Redirect to list page immediately
+                $this->redirect(UserInvitationResource::getUrl('index'));
+                return;
+            }
+        }
+        
+        parent::mount();
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Ensure the invited_by field is set to the current user's ID

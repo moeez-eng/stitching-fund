@@ -89,6 +89,22 @@ class UserInvitationTable
                     ->icon('heroicon-o-paper-airplane')
                     ->visible(fn (UserInvitation $record) => ! $record->isAccepted())
                     ->action(function (UserInvitation $record) {
+                        // Check if user is demo and has reached invitation limit
+                        $user = \Illuminate\Support\Facades\Auth::user();
+                        if ($user?->is_demo) {
+                            $invitationCount = \App\Models\UserInvitation::where('invited_by', $user->id)->count();
+                            
+                            if ($invitationCount >= 2) {
+                                Notification::make()
+                                    ->title('Invitation Limit Reached')
+                                    ->body('Demo users can only send 2 invitations. You have reached your limit.')
+                                    ->warning()
+                                    ->persistent()
+                                    ->send();
+                                return;
+                            }
+                        }
+                        
                         try {
                             Mail::to($record->email)->send(new InvestorInvitationMail($record));
                             Notification::make()

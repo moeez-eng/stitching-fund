@@ -48,11 +48,12 @@
               Purchasing, cutting, stitching, finishing, orders, timelines, and reports — all managed in one powerful platform.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ route('filament.admin.auth.register') }}" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
+                <a href="{{ route('filament.admin.auth.register') }}" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-transparent hover:text-white  hover:border-2 hover:border-white">
                     Start Managing Production
                 </a>
-                <a href="{{ route('demo.register') }}" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition">
-                   Try Demo
+                
+                <a href="{{ route('demo.register') }}" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 ">
+                   Get Free Trial
                 </a>
             </div>
         </div>

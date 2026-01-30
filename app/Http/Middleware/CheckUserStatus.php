@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use Filament\Notifications\Notification;
 
@@ -31,32 +32,53 @@ class CheckUserStatus
                 session()->put('login_notification_sent', true);
             }
             
+            // Send demo warning notification for demo users
+            if ($user->is_demo && !session()->has('demo_warning_sent')) {
+                Notification::make()
+                    ->title('⚠️ Important - Demo Account Warning!')
+                    ->body('Please do not add real data in your trial account. The trial is only for checking system functionality. When your trial expires, all your data will be deleted.')
+                    ->warning()
+                    ->persistent()
+                    ->sendToDatabase($user);
+                session()->put('demo_warning_sent', true);
+            }
+            
             // Check for demo user and handle expiry
             if ($user->is_demo && $user->demo_expires_at) {
                 $expiresAt = \Carbon\Carbon::parse($user->demo_expires_at);
                 $now = now();
                 $daysLeft = $now->diffInDays($expiresAt, false); // false for signed value
                 
-                // If account has expired, deactivate it
+                // If account has expired, clean up data and block access
                 if ($daysLeft < 0) {
-                    if ($user->status !== 'expired') {
-                        $user->update([
-                            'status' => 'expired',
-                            'is_demo' => false // Clear demo flag
-                        ]);
-                        
-                        // Clean up demo data - service removed
+                    // Clean up all demo data (only once per user)
+                    if (!session()->has('demo_data_cleaned_' . $user->id)) {
+                        try {
+                            (new \App\Services\Demo\DemoDataCleanupService())->cleanupExpiredDemoUser($user);
+                            session()->put('demo_data_cleaned_' . $user->id, true);
+                        } catch (\Exception $e) {
+                            Log::error('Failed to cleanup demo data', [
+                                'user_id' => $user->id,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
                     }
                     
                     // Send expired notification
                     if (!session()->has('demo_expired_notification_sent')) {
                         Notification::make()
                             ->title('Demo Account Expired')
-                            ->body('Your demo account has expired. Please upgrade to continue using our services.')
+                            ->body('Your demo account has expired . Please upgrade to continue using our services.')
                             ->danger()
                             ->sendToDatabase($user);
                         session()->put('demo_expired_notification_sent', true);
                     }
+                    
+                    // Logout the user
+                    Auth::logout();
+                    
+                    // Redirect to login
+                    return redirect()->route('filament.admin.auth.login');
                 }
                 
                 // Send expiry notification if account expires in 3 days or less

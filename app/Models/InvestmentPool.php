@@ -2,14 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Filament\Notifications\Notification;
 
 class InvestmentPool extends Model
 {
-    use HasFactory;
 
     protected $fillable = [
         'lat_id',

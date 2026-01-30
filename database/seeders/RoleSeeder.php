@@ -15,9 +15,8 @@ class RoleSeeder extends Seeder
     {
         // Roles you want available in the app
         $roles = [
-            'customer',
-            'vendor',
-            'admin',
+            'investor',
+            'agency_owner',
             'super-admin',
         ];
 

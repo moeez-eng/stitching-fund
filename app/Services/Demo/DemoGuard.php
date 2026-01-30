@@ -6,10 +6,10 @@ use Illuminate\Support\Facades\Auth;
 
 class DemoGuard
 {
-    public static function deny(string $message = 'Action disabled in demo mode.')
+    public static function blockIfDemo(): void
     {
-        if (Auth::check() && Auth::user()->is_demo) {
-            abort(403, $message);
+        if (Auth::user()?->is_demo) {
+            abort(403, 'This action is disabled in demo mode.');
         }
     }
 }

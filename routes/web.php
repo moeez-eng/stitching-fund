@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\WalletController;
 use App\Filament\Register\Pages\RegisterPage;
+use App\Http\Controllers\Demo\DemoRegisterController;
 
 
 
@@ -38,5 +39,12 @@ Route::get('/investor/available-pools', [WalletController::class, 'getAvailableP
     ->middleware('auth')
     ->name('investor.available-pools');
 
-    
+   
+
+Route::get('/demo/register', [DemoRegisterController::class, 'show'])
+    ->name('demo.register');
+
+Route::post('/demo/register', [DemoRegisterController::class, 'store'])
+    ->name('demo.register.store');
+
 
